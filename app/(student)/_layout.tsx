@@ -29,9 +29,18 @@ export default function StudentTabLayout() {
       <Tabs.Screen
         name="courses"
         options={{
-          title: 'Courses',
+          title: 'Browse',
           tabBarIcon: ({ color }) => (
             <BookIcon color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="browse"
+        options={{
+          title: 'All Courses',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ color, fontSize: 24 }}>🔍</Text>
           ),
         }}
       />

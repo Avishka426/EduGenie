@@ -95,7 +95,13 @@ export default function LoginScreen() {
                 });
               }
             },
-            { text: 'OK' }
+            {
+              text: 'Test Course Creation',
+              onPress: () => {
+                // Navigate directly to course creation for testing
+                router.push('/(instructor)/create');
+              }
+            },
           ]
         );
       } else {

@@ -52,6 +52,22 @@ export const API_ENDPOINTS = {
   LOGOUT: '/api/auth/logout',
   PROFILE: '/api/auth/profile',
   
+  // Course endpoints - Instructors
+  CREATE_COURSE: '/api/courses',
+  MY_COURSES: '/api/courses/instructor/my-courses',
+  UPDATE_COURSE: '/api/courses', // + /{courseId}
+  DELETE_COURSE: '/api/courses', // + /{courseId}
+  COURSE_STUDENTS: '/api/courses', // + /{courseId}/students
+  
+  // Course endpoints - Students
+  BROWSE_COURSES: '/api/courses',
+  COURSE_DETAILS: '/api/courses', // + /{courseId}
+  ENROLL_COURSE: '/api/courses', // + /{courseId}/enroll
+  ENROLLED_COURSES: '/api/courses/student/enrolled',
+  
+  // Public endpoints
+  COURSE_CATEGORIES: '/api/courses/categories',
+  
   // Utility endpoints
   HEALTH: '/health',
   API_INFO: '/api',

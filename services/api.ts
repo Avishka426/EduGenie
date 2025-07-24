@@ -169,6 +169,127 @@ class ApiService {
   async getApiInfo() {
     return this.request(API_ENDPOINTS.API_INFO);
   }
+
+  // Course methods for Instructors
+  async createCourse(courseData: {
+    title: string;
+    description: string;
+    content: string;
+    category: string;
+    price: number;
+    duration: number; // hours
+    level: string;
+    thumbnail?: string;
+    tags?: string[];
+    maxStudents?: number;
+    prerequisites?: string;
+    whatYouWillLearn?: string;
+  }) {
+    const response = await this.request(API_ENDPOINTS.CREATE_COURSE, {
+      method: 'POST',
+      body: JSON.stringify(courseData),
+    });
+
+    if (response.success) {
+      console.log('✅ Course created successfully:', response.data);
+    }
+
+    return response;
+  }
+
+  async getInstructorCourses() {
+    console.log('🔄 ApiService.getInstructorCourses() called');
+    console.log('🔗 Making request to:', API_ENDPOINTS.MY_COURSES);
+    
+    const response = await this.request(API_ENDPOINTS.MY_COURSES);
+    
+    console.log('📡 getInstructorCourses response:', {
+      success: response.success,
+      dataType: typeof response.data,
+      dataLength: Array.isArray(response.data) ? response.data.length : 'not array',
+      rawData: response.data,
+      error: response.error
+    });
+    
+    return response;
+  }
+
+  async updateCourse(courseId: string, courseData: any) {
+    return this.request(`${API_ENDPOINTS.UPDATE_COURSE}/${courseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(courseData),
+    });
+  }
+
+  async deleteCourse(courseId: string) {
+    return this.request(`${API_ENDPOINTS.DELETE_COURSE}/${courseId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getCourseStudents(courseId: string) {
+    return this.request(`${API_ENDPOINTS.COURSE_STUDENTS}/${courseId}/students`);
+  }
+
+  // Course methods for Students
+  async browseCourses(filters?: {
+    category?: string;
+    level?: string;
+    priceMin?: number;
+    priceMax?: number;
+    search?: string;
+  }) {
+    let url = API_ENDPOINTS.BROWSE_COURSES;
+    
+    if (filters) {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+    }
+
+    return this.request(url);
+  }
+
+  async getCourseDetails(courseId: string) {
+    return this.request(`${API_ENDPOINTS.COURSE_DETAILS}/${courseId}`);
+  }
+
+  async enrollInCourse(courseId: string) {
+    const response = await this.request(`${API_ENDPOINTS.ENROLL_COURSE}/${courseId}/enroll`, {
+      method: 'POST',
+    });
+
+    if (response.success) {
+      console.log('✅ Successfully enrolled in course:', courseId);
+    }
+
+    return response;
+  }
+
+  async getEnrolledCourses() {
+    return this.request(API_ENDPOINTS.ENROLLED_COURSES);
+  }
+
+  // Public course methods
+  async getCourseCategories() {
+    return this.request(API_ENDPOINTS.COURSE_CATEGORIES);
+  }
+
+  // Legacy methods (for backward compatibility)
+  async getCourses() {
+    return this.browseCourses();
+  }
+
+  async getCourse(courseId: string) {
+    return this.getCourseDetails(courseId);
+  }
 }
 
 export default new ApiService();

@@ -2,10 +2,12 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { COLORS } from '@/constants';
 import { useAuth } from '@/context/AuthContext';
+import ApiService from '@/services/api';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,9 +16,137 @@ import {
   View,
 } from 'react-native';
 
+interface InstructorStats {
+  totalCourses: number;
+  totalStudents: number;
+  totalRevenue: number;
+  avgRating: number;
+  newEnrollments: number;
+  completionRate: number;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  level: string;
+  enrollmentCount?: number;
+  rating?: number;
+  status?: string;
+  createdAt?: string;
+  [key: string]: any;
+}
+
+interface Activity {
+  id: string;
+  type: 'enrollment' | 'review' | 'completion';
+  message: string;
+  time: string;
+  course?: string;
+  student?: string;
+}
+
 export default function InstructorDashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  
+  // State management
+  const [stats, setStats] = useState<InstructorStats>({
+    totalCourses: 0,
+    totalStudents: 0,
+    totalRevenue: 0,
+    avgRating: 0,
+    newEnrollments: 0,
+    completionRate: 0,
+  });
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load dashboard data
+  const loadDashboardData = useCallback(async () => {
+    try {
+      setError(null);
+      console.log('🔄 Loading instructor dashboard data...');
+      
+      // Check authentication
+      const isAuth = await ApiService.isAuthenticated();
+      if (!isAuth) {
+        setError('Not authenticated');
+        router.replace('/login');
+        return;
+      }
+
+      // Load courses data
+      const coursesResponse = await ApiService.getInstructorCourses();
+      console.log('📚 Courses response:', coursesResponse);
+      
+      if (coursesResponse.success) {
+        // Handle different response formats from backend
+        let coursesData: Course[] = [];
+        
+        if (Array.isArray(coursesResponse.data)) {
+          coursesData = coursesResponse.data;
+        } else if (coursesResponse.data && typeof coursesResponse.data === 'object') {
+          if (Array.isArray(coursesResponse.data.courses)) {
+            coursesData = coursesResponse.data.courses;
+          } else if (Array.isArray(coursesResponse.data.data)) {
+            coursesData = coursesResponse.data.data;
+          } else {
+            coursesData = [coursesResponse.data];
+          }
+        }
+
+        setCourses(coursesData);
+
+        // Calculate statistics from courses data
+        const totalCourses = coursesData.length;
+        const totalStudents = coursesData.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
+        const totalRevenue = coursesData.reduce((sum, course) => sum + (course.price * (course.enrollmentCount || 0)), 0);
+        const avgRating = coursesData.length > 0 
+          ? coursesData.reduce((sum, course) => sum + (course.rating || 0), 0) / coursesData.length 
+          : 0;
+
+        setStats({
+          totalCourses,
+          totalStudents,
+          totalRevenue,
+          avgRating: Math.round(avgRating * 10) / 10,
+          newEnrollments: 0, // This would need a separate API endpoint
+          completionRate: 0, // This would need a separate API endpoint
+        });
+
+        console.log('📊 Calculated stats:', { totalCourses, totalStudents, totalRevenue, avgRating });
+      } else {
+        console.error('❌ Failed to load courses:', coursesResponse.error);
+        setError(coursesResponse.error || 'Failed to load courses');
+      }
+
+      // For now, set empty activities (would need separate API endpoint)
+      setActivities([]);
+
+    } catch (error) {
+      console.error('❌ Error loading dashboard data:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, [router]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -50,64 +180,36 @@ export default function InstructorDashboard() {
     );
   };
 
-  // Mock instructor data
-  const instructorStats = {
-    totalCourses: 5,
-    totalStudents: 234,
-    totalRevenue: 12450,
-    avgRating: 4.8,
-    newEnrollments: 23,
-    completionRate: 78,
-  };
+  // Get top performing courses (limit to 3)
+  const topPerformingCourses = courses
+    .sort((a: Course, b: Course) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0))
+    .slice(0, 3)
+    .map((course: Course, index: number) => ({
+      id: course.id,
+      title: course.title,
+      students: course.enrollmentCount || 0,
+      rating: course.rating || 0,
+      revenue: (course.price || 0) * (course.enrollmentCount || 0),
+    }));
 
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'enrollment',
-      message: 'Sarah Johnson enrolled in "React Native Basics"',
-      time: '2 hours ago',
-    },
-    {
-      id: '2',
-      type: 'review',
-      message: 'New 5-star review for "Advanced JavaScript"',
-      time: '4 hours ago',
-    },
-    {
-      id: '3',
-      type: 'completion',
-      message: 'Mike Davis completed "UI/UX Design Course"',
-      time: '6 hours ago',
-    },
-  ];
-
-  const topPerformingCourses = [
-    {
-      id: '1',
-      title: 'React Native Complete Guide',
-      students: 89,
-      rating: 4.9,
-      revenue: 4450,
-    },
-    {
-      id: '2',
-      title: 'Advanced JavaScript',
-      students: 67,
-      rating: 4.8,
-      revenue: 3350,
-    },
-    {
-      id: '3',
-      title: 'UI/UX Design Fundamentals',
-      students: 45,
-      rating: 4.7,
-      revenue: 2250,
-    },
-  ];
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContent}>
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -116,6 +218,9 @@ export default function InstructorDashboard() {
                 Welcome{user?.name ? `, ${user.name}` : ''} - Instructor Dashboard
               </Text>
               <Text style={styles.subtitle}>Manage your courses and track performance</Text>
+              {error && (
+                <Text style={styles.errorText}>⚠️ {error}</Text>
+              )}
             </View>
             <TouchableOpacity
               style={styles.logoutButton}
@@ -137,8 +242,8 @@ export default function InstructorDashboard() {
               style={styles.actionButton}
             />
             <Button
-              title="View Students"
-              onPress={() => router.push('./students')}
+              title="My Courses"
+              onPress={() => router.push('./courses')}
               variant="secondary"
               size="medium"
               style={styles.actionButton}
@@ -151,6 +256,49 @@ export default function InstructorDashboard() {
             size="medium"
             style={styles.actionButton}
           />
+          {__DEV__ && (
+            <Button
+              title="🔧 Debug Auth"
+              onPress={async () => {
+                try {
+                  const ApiService = (await import('@/services/api')).default;
+                  const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+                  
+                  const isAuth = await ApiService.isAuthenticated();
+                  const user = await ApiService.getCurrentUser();
+                  const token = await AsyncStorage.getItem('authToken');
+                  
+                  Alert.alert('Debug Info', `Auth: ${isAuth}\nUser: ${user?.name || 'none'}\nRole: ${user?.role || 'none'}\nToken: ${token ? 'exists' : 'missing'}`);
+                } catch (error) {
+                  Alert.alert('Debug Error', String(error));
+                }
+              }}
+              variant="secondary"
+              size="small"
+              style={styles.actionButton}
+            />
+          )}
+          {__DEV__ && (
+            <Button
+              title="🔧 Advanced Debug"
+              onPress={() => router.push('./debug')}
+              variant="secondary"
+              size="small"
+              style={styles.actionButton}
+            />
+          )}
+          {__DEV__ && (
+            <Button
+              title="🔄 Reload Data"
+              onPress={() => {
+                setIsLoading(true);
+                loadDashboardData();
+              }}
+              variant="secondary"
+              size="small"
+              style={styles.actionButton}
+            />
+          )}
         </Card>
 
         {/* Statistics Overview */}
@@ -158,27 +306,27 @@ export default function InstructorDashboard() {
           <Text style={styles.cardTitle}>Performance Overview</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{instructorStats.totalCourses}</Text>
+              <Text style={styles.statNumber}>{stats.totalCourses}</Text>
               <Text style={styles.statLabel}>Total Courses</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{instructorStats.totalStudents}</Text>
+              <Text style={styles.statNumber}>{stats.totalStudents}</Text>
               <Text style={styles.statLabel}>Total Students</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>${instructorStats.totalRevenue}</Text>
+              <Text style={styles.statNumber}>${stats.totalRevenue}</Text>
               <Text style={styles.statLabel}>Total Revenue</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{instructorStats.avgRating}</Text>
+              <Text style={styles.statNumber}>{stats.avgRating}</Text>
               <Text style={styles.statLabel}>Avg Rating</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{instructorStats.newEnrollments}</Text>
+              <Text style={styles.statNumber}>{stats.newEnrollments}</Text>
               <Text style={styles.statLabel}>New This Week</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{instructorStats.completionRate}%</Text>
+              <Text style={styles.statNumber}>{stats.completionRate}%</Text>
               <Text style={styles.statLabel}>Completion Rate</Text>
             </View>
           </View>
@@ -187,43 +335,51 @@ export default function InstructorDashboard() {
         {/* Top Performing Courses */}
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>Top Performing Courses</Text>
-          {topPerformingCourses.map((course, index) => (
-            <View key={course.id} style={styles.courseItem}>
-              <View style={styles.courseRank}>
-                <Text style={styles.rankNumber}>{index + 1}</Text>
-              </View>
-              <View style={styles.courseInfo}>
-                <Text style={styles.courseTitle}>{course.title}</Text>
-                <View style={styles.courseStats}>
-                  <Text style={styles.courseStat}>👥 {course.students} students</Text>
-                  <Text style={styles.courseStat}>⭐ {course.rating}</Text>
-                  <Text style={styles.courseStat}>💰 ${course.revenue}</Text>
+          {topPerformingCourses.length === 0 ? (
+            <Text style={styles.emptyText}>No courses available yet</Text>
+          ) : (
+            topPerformingCourses.map((course: any, index: number) => (
+              <View key={course.id} style={styles.courseItem}>
+                <View style={styles.courseRank}>
+                  <Text style={styles.rankNumber}>{index + 1}</Text>
+                </View>
+                <View style={styles.courseInfo}>
+                  <Text style={styles.courseTitle}>{course.title}</Text>
+                  <View style={styles.courseStats}>
+                    <Text style={styles.courseStat}>👥 {course.students} students</Text>
+                    <Text style={styles.courseStat}>⭐ {course.rating.toFixed(1)}</Text>
+                    <Text style={styles.courseStat}>💰 ${course.revenue}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
+            ))
+          )}
         </Card>
 
         {/* Recent Activity */}
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>Recent Activity</Text>
-          {recentActivity.map((activity) => (
-            <View key={activity.id} style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Text style={styles.activityEmoji}>
-                  {activity.type === 'enrollment' ? '🎓' : 
-                   activity.type === 'review' ? '⭐' : '🏆'}
-                </Text>
+          {activities.length === 0 ? (
+            <Text style={styles.emptyText}>No recent activity</Text>
+          ) : (
+            activities.map((activity: Activity) => (
+              <View key={activity.id} style={styles.activityItem}>
+                <View style={styles.activityIcon}>
+                  <Text style={styles.activityEmoji}>
+                    {activity.type === 'enrollment' ? '🎓' : 
+                     activity.type === 'review' ? '⭐' : '🏆'}
+                  </Text>
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityMessage}>{activity.message}</Text>
+                  <Text style={styles.activityTime}>{activity.time}</Text>
+                </View>
               </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityMessage}>{activity.message}</Text>
-                <Text style={styles.activityTime}>{activity.time}</Text>
-              </View>
-            </View>
-          ))}
+            ))
+          )}
           <Button
             title="View All Activity"
-            onPress={() => console.log('View all activity')}
+            onPress={() => console.log('View all activity - coming soon')}
             variant="secondary"
             size="small"
             style={styles.viewAllButton}
@@ -236,17 +392,22 @@ export default function InstructorDashboard() {
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>New Students Target: 50</Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '46%' }]} />
+              <View style={[styles.progressFill, { width: `${(stats.newEnrollments / 50) * 100}%` }]} />
             </View>
-            <Text style={styles.goalProgress}>23/50 (46%)</Text>
+            <Text style={styles.goalProgress}>{stats.newEnrollments}/50 ({Math.round((stats.newEnrollments / 50) * 100)}%)</Text>
           </View>
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Revenue Target: $15,000</Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '83%' }]} />
+              <View style={[styles.progressFill, { width: `${(stats.totalRevenue / 15000) * 100}%` }]} />
             </View>
-            <Text style={styles.goalProgress}>$12,450/$15,000 (83%)</Text>
+            <Text style={styles.goalProgress}>${stats.totalRevenue}/$15,000 ({Math.round((stats.totalRevenue / 15000) * 100)}%)</Text>
           </View>
+          {__DEV__ && (
+            <Text style={styles.emptyText}>
+              Note: Goals are placeholder values. Implement goal setting feature in backend.
+            </Text>
+          )}
         </Card>
       </ScrollView>
     </SafeAreaView>
@@ -257,6 +418,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.GRAY_MEDIUM,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#dc3545',
+    marginTop: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.GRAY_MEDIUM,
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontStyle: 'italic',
   },
   scrollContent: {
     padding: 16,

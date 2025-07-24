@@ -1,58 +1,88 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-} from 'react-native';
-import { COLORS } from '@/constants';
-import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import { COLORS } from '@/constants';
+import ApiService from '@/services/api';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+interface EnrolledCourse {
+  id: string;
+  title: string;
+  description: string;
+  instructorName: string;
+  category: string;
+  duration?: number;
+  level: string;
+  thumbnail?: string;
+  enrolledAt: string;
+  // Mock fields for progress tracking
+  progress?: number;
+  totalLessons?: number;
+  completedLessons?: number;
+  lastAccessed?: string;
+  status?: 'active' | 'completed';
+  nextLesson?: string;
+  estimatedTime?: string;
+}
 
 export default function EnrolledCoursesScreen() {
   const [selectedTab, setSelectedTab] = useState<'active' | 'completed'>('active');
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock enrolled courses data
-  const enrolledCourses = [
-    {
-      id: '1',
-      title: 'React Native Complete Guide',
-      instructor: 'John Doe',
-      progress: 45,
-      totalLessons: 24,
-      completedLessons: 11,
-      lastAccessed: '2 days ago',
-      status: 'active',
-      nextLesson: 'State Management with Redux',
-      estimatedTime: '2h 30m remaining',
-    },
-    {
-      id: '2',
-      title: 'UI/UX Design Fundamentals',
-      instructor: 'Mike Johnson',
-      progress: 100,
-      totalLessons: 18,
-      completedLessons: 18,
-      lastAccessed: '1 week ago',
-      status: 'completed',
-      certificate: true,
-      completedDate: 'March 15, 2024',
-    },
-    {
-      id: '3',
-      title: 'JavaScript ES6+ Features',
-      instructor: 'Sarah Wilson',
-      progress: 78,
-      totalLessons: 15,
-      completedLessons: 12,
-      lastAccessed: '1 day ago',
-      status: 'active',
-      nextLesson: 'Async/Await and Promises',
-      estimatedTime: '45m remaining',
-    },
-  ];
+  useEffect(() => {
+    loadEnrolledCourses();
+  }, []);
+
+  const loadEnrolledCourses = async () => {
+    try {
+      const response = await ApiService.getEnrolledCourses();
+      
+      if (response.success && response.data) {
+        // Handle the API response structure { enrolledCourses: [...] }
+        const coursesData = response.data.enrolledCourses || response.data || [];
+        
+        // Add mock progress data for demonstration
+        const coursesWithProgress = coursesData.map((course: any, index: number) => ({
+          ...course,
+          progress: Math.floor(Math.random() * 100),
+          totalLessons: Math.floor(Math.random() * 20) + 10,
+          completedLessons: Math.floor(Math.random() * 15) + 5,
+          lastAccessed: index === 0 ? '2 days ago' : index === 1 ? '1 week ago' : '1 day ago',
+          status: Math.random() > 0.7 ? 'completed' : 'active',
+          nextLesson: 'Module ' + (Math.floor(Math.random() * 5) + 1),
+          estimatedTime: Math.floor(Math.random() * 3) + 1 + 'h remaining',
+        }));
+        
+        setEnrolledCourses(coursesWithProgress);
+        console.log('📚 Loaded enrolled courses:', coursesWithProgress.length);
+      } else {
+        console.error('Failed to load enrolled courses:', response.error);
+        Alert.alert('Error', 'Failed to load enrolled courses');
+      }
+    } catch (error) {
+      console.error('❌ Error loading enrolled courses:', error);
+      Alert.alert('Error', 'Failed to load enrolled courses');
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadEnrolledCourses();
+  };
 
   const activeCourses = enrolledCourses.filter(course => course.status === 'active');
   const completedCourses = enrolledCourses.filter(course => course.status === 'completed');
@@ -92,7 +122,7 @@ export default function EnrolledCoursesScreen() {
         )}
       </View>
 
-      <Text style={styles.instructorText}>by {course.instructor}</Text>
+      <Text style={styles.instructorText}>by {course.instructorName}</Text>
 
       {renderProgressBar(course.progress)}
 
@@ -178,8 +208,21 @@ export default function EnrolledCoursesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {selectedTab === 'active' ? (
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.PRIMARY]}
+          />
+        }
+      >
+        {isLoading ? (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Loading courses...</Text>
+          </Card>
+        ) : selectedTab === 'active' ? (
           activeCourses.length > 0 ? (
             activeCourses.map(renderCourseCard)
           ) : (
