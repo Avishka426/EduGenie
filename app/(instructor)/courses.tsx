@@ -2,7 +2,6 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { COLORS } from '@/constants';
 import ApiService from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -40,25 +39,13 @@ export default function InstructorCoursesScreen() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const loadCourses = useCallback(async () => {
     try {
-      setError(null);
-      console.log('🔄 Loading instructor courses...');
-      
       // Check authentication status
       const isAuth = await ApiService.isAuthenticated();
-      const token = await AsyncStorage.getItem('authToken');
-      const user = await AsyncStorage.getItem('user');
-      
-      const debug = `Auth: ${isAuth}, Token: ${token ? 'exists' : 'missing'}, User: ${user ? 'exists' : 'missing'}`;
-      setDebugInfo(debug);
-      console.log('🔐 Auth Debug:', debug);
       
       if (!isAuth) {
-        setError('Not authenticated');
         Alert.alert(
           'Authentication Required', 
           'Please log in to view your courses.',
@@ -69,14 +56,7 @@ export default function InstructorCoursesScreen() {
       
       const response = await ApiService.getInstructorCourses();
       
-      console.log('📡 API Response:', response);
-      
       if (response.success) {
-        console.log('✅ API call successful');
-        console.log('📊 Response data type:', typeof response.data);
-        console.log('📊 Response data length:', Array.isArray(response.data) ? response.data.length : 'not array');
-        console.log('📊 Raw response data:', JSON.stringify(response.data, null, 2));
-        
         // Handle different response formats from backend
         let coursesData: Course[] = [];
         
@@ -97,12 +77,7 @@ export default function InstructorCoursesScreen() {
         }
         
         setCourses(coursesData);
-        
-        console.log('📚 Setting courses state with:', coursesData.length, 'courses');
-        console.log('📚 Processed courses details:', coursesData);
       } else {
-        console.error('❌ Failed to load courses:', response.error);
-        setError(response.error || 'Failed to load courses');
         
         // More specific error handling
         if (response.error?.includes('Access denied') || response.error?.includes('token')) {
@@ -126,10 +101,7 @@ export default function InstructorCoursesScreen() {
           Alert.alert('Error', response.error || 'Failed to load your courses');
         }
       }
-    } catch (error) {
-      console.error('❌ Error loading courses:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      setError(errorMsg);
+    } catch {
       Alert.alert(
         'Unexpected Error', 
         'An unexpected error occurred. Please try again.',
@@ -167,8 +139,7 @@ export default function InstructorCoursesScreen() {
               } else {
                 Alert.alert('Error', response.error || 'Failed to delete course');
               }
-            } catch (error) {
-              console.error('❌ Error deleting course:', error);
+            } catch {
               Alert.alert('Error', 'Failed to delete course');
             }
           },
@@ -211,77 +182,7 @@ export default function InstructorCoursesScreen() {
           <Text style={styles.subtitle}>
             {courses.length} course{courses.length !== 1 ? 's' : ''} created
           </Text>
-          
-          {/* Debug Info */}
-          {__DEV__ && debugInfo && (
-            <View style={styles.debugContainer}>
-              <Text style={styles.debugText}>Debug: {debugInfo}</Text>
-              {error && <Text style={styles.errorText}>Error: {error}</Text>}
-              <Text style={styles.debugText}>Courses in state: {courses.length}</Text>
-              <Text style={styles.debugText}>
-                Course data: {JSON.stringify(Array.isArray(courses) ? courses.slice(0, 2) : courses, null, 2)}
-              </Text>
-            </View>
-          )}
         </View>
-
-        {/* Raw API Response Debug */}
-        {__DEV__ && (
-          <Card style={styles.card}>
-            <Text style={styles.cardTitle}>🔧 API Debug Info</Text>
-            <Button
-              title="Test API Direct"
-              onPress={async () => {
-                try {
-                  console.log('🧪 Testing direct API call...');
-                  const response = await ApiService.getInstructorCourses();
-                  Alert.alert(
-                    'API Response', 
-                    `Success: ${response.success}\nData Type: ${typeof response.data}\nData Length: ${Array.isArray(response.data) ? response.data.length : 'not array'}\nError: ${response.error || 'none'}`
-                  );
-                } catch (err) {
-                  Alert.alert('API Error', String(err));
-                }
-              }}
-              variant="secondary"
-              size="small"
-            />
-            <Button
-              title="Test Raw Fetch"
-              onPress={async () => {
-                try {
-                  const token = await AsyncStorage.getItem('authToken');
-                  const url = 'http://localhost:3000/api/courses/instructor/my-courses';
-                  
-                  const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      ...(token && { Authorization: `Bearer ${token}` }),
-                    },
-                  });
-                  
-                  const data = await response.json();
-                  console.log('🔍 Raw fetch response:', { status: response.status, data });
-                  
-                  Alert.alert(
-                    'Raw Fetch Result',
-                    `Status: ${response.status}\nOK: ${response.ok}\nData: ${JSON.stringify(data).substring(0, 200)}...`
-                  );
-                } catch (err) {
-                  Alert.alert('Raw Fetch Error', String(err));
-                }
-              }}
-              variant="secondary"
-              size="small"
-              style={{ marginTop: 8 }}
-            />
-            <Text style={styles.debugText}>Current courses count: {courses.length}</Text>
-            {courses.length > 0 && (
-              <Text style={styles.debugText}>First course: {JSON.stringify(courses[0], null, 2)}</Text>
-            )}
-          </Card>
-        )}
 
         {/* Create Course Button */}
         <View style={styles.actionsRow}>
@@ -293,7 +194,6 @@ export default function InstructorCoursesScreen() {
           <Button
             title="🔄 Refresh"
             onPress={() => {
-              setError(null);
               loadCourses();
             }}
             variant="secondary"
@@ -314,26 +214,6 @@ export default function InstructorCoursesScreen() {
               onPress={() => router.push('./create')}
               style={styles.emptyButton}
             />
-            
-            {/* Additional help for debugging */}
-            {__DEV__ && (
-              <View style={styles.debugHelp}>
-                <Text style={styles.debugHelpTitle}>Troubleshooting:</Text>
-                <Text style={styles.debugHelpText}>
-                  • Make sure you&apos;re logged in as an instructor{'\n'}
-                  • Check your internet connection{'\n'}
-                  • Ensure the backend server is running on localhost:3000{'\n'}
-                  • Try logging out and logging back in
-                </Text>
-                <Button
-                  title="Open Debug Tools"
-                  onPress={() => router.push('./debug')}
-                  variant="secondary"
-                  size="small"
-                  style={styles.debugButton}
-                />
-              </View>
-            )}
           </Card>
         ) : (
           courses.map((course) => (
@@ -581,44 +461,6 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
     fontSize: 14,
     fontWeight: '600',
-  },
-  debugContainer: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-  },
-  debugText: {
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 2,
-  },
-  errorText: {
-    fontSize: 10,
-    color: '#dc3545',
-  },
-  debugHelp: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#fff3cd',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ffeaa7',
-  },
-  debugHelpTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#856404',
-    marginBottom: 8,
-  },
-  debugHelpText: {
-    fontSize: 12,
-    color: '#856404',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  debugButton: {
-    alignSelf: 'center',
   },
   actionsRow: {
     flexDirection: 'row',

@@ -228,7 +228,7 @@ class ApiService {
   }
 
   async getCourseStudents(courseId: string) {
-    return this.request(`${API_ENDPOINTS.COURSE_STUDENTS}/${courseId}/students`);
+    return this.request(`/api/courses/${courseId}/students`);
   }
 
   // Course methods for Students

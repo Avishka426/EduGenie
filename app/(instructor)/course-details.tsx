@@ -61,11 +61,9 @@ export default function CourseDetailsScreen() {
     
     try {
       setError(null);
-      console.log('🔄 Loading course details for:', courseId);
       
       // Load course details
       const courseResponse = await ApiService.getCourseDetails(courseId);
-      console.log('📚 Course details response:', courseResponse);
       
       if (courseResponse.success) {
         setCourse(courseResponse.data);
@@ -77,7 +75,6 @@ export default function CourseDetailsScreen() {
       
       // Load enrolled students
       const studentsResponse = await ApiService.getCourseStudents(courseId);
-      console.log('👥 Students response:', studentsResponse);
       
       if (studentsResponse.success) {
         // Handle different response formats
@@ -93,12 +90,11 @@ export default function CourseDetailsScreen() {
         
         setStudents(studentsData);
       } else {
-        console.warn('⚠️ Failed to load students:', studentsResponse.error);
-        // Don't show error for students as it might not be critical
+        // Set empty array if students can't be loaded
+        setStudents([]);
       }
 
     } catch (error) {
-      console.error('❌ Error loading course data:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMsg);
       Alert.alert('Error', 'Failed to load course data');
@@ -138,8 +134,7 @@ export default function CourseDetailsScreen() {
               } else {
                 Alert.alert('Error', response.error || 'Failed to delete course');
               }
-            } catch (error) {
-              console.error('❌ Error deleting course:', error);
+            } catch {
               Alert.alert('Error', 'Failed to delete course');
             }
           },
@@ -377,34 +372,6 @@ export default function CourseDetailsScreen() {
               </Card>
             )}
           </View>
-        )}
-
-        {/* Debug Info */}
-        {__DEV__ && (
-          <Card style={styles.card}>
-            <Text style={styles.cardTitle}>🔧 Debug Info</Text>
-            <Text style={styles.debugText}>Course ID: {courseId}</Text>
-            <Text style={styles.debugText}>Students loaded: {students.length}</Text>
-            <Text style={styles.debugText}>Active tab: {activeTab}</Text>
-            <Button
-              title="Test API Calls"
-              onPress={async () => {
-                try {
-                  const courseRes = await ApiService.getCourseDetails(courseId);
-                  const studentsRes = await ApiService.getCourseStudents(courseId);
-                  Alert.alert(
-                    'API Test Result',
-                    `Course: ${courseRes.success ? 'Success' : 'Failed'}\nStudents: ${studentsRes.success ? 'Success' : 'Failed'}`
-                  );
-                } catch (err) {
-                  Alert.alert('API Test Error', String(err));
-                }
-              }}
-              variant="secondary"
-              size="small"
-              style={styles.debugButton}
-            />
-          </Card>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -669,13 +636,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.GRAY_MEDIUM,
     textAlign: 'center',
-  },
-  debugText: {
-    fontSize: 12,
-    color: COLORS.GRAY_MEDIUM,
-    marginBottom: 4,
-  },
-  debugButton: {
-    marginTop: 8,
   },
 });

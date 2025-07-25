@@ -65,7 +65,6 @@ export default function EnrolledCoursesScreen() {
         }));
         
         setEnrolledCourses(coursesWithProgress);
-        console.log('📚 Loaded enrolled courses:', coursesWithProgress.length);
       } else {
         console.error('Failed to load enrolled courses:', response.error);
         Alert.alert('Error', 'Failed to load enrolled courses');
@@ -88,13 +87,13 @@ export default function EnrolledCoursesScreen() {
   const completedCourses = enrolledCourses.filter(course => course.status === 'completed');
 
   const continueCourse = (courseId: string, courseTitle: string) => {
-    console.log(`Continuing course: ${courseTitle}`);
-    // Navigate to course content
+    // Navigate to course content - placeholder for future implementation
+    Alert.alert('Continue Learning', `Ready to continue "${courseTitle}"? Course content player coming soon!`);
   };
 
   const downloadCertificate = (courseId: string, courseTitle: string) => {
-    console.log(`Downloading certificate for: ${courseTitle}`);
-    // Download certificate functionality
+    // Download certificate functionality - placeholder for future implementation
+    Alert.alert('Certificate', `Certificate download for "${courseTitle}" will be available soon!`);
   };
 
   const renderProgressBar = (progress: number) => (

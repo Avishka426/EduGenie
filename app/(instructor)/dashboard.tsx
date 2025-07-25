@@ -71,7 +71,6 @@ export default function InstructorDashboard() {
   const loadDashboardData = useCallback(async () => {
     try {
       setError(null);
-      console.log('🔄 Loading instructor dashboard data...');
       
       // Check authentication
       const isAuth = await ApiService.isAuthenticated();
@@ -83,7 +82,6 @@ export default function InstructorDashboard() {
 
       // Load courses data
       const coursesResponse = await ApiService.getInstructorCourses();
-      console.log('📚 Courses response:', coursesResponse);
       
       if (coursesResponse.success) {
         // Handle different response formats from backend
@@ -120,9 +118,7 @@ export default function InstructorDashboard() {
           completionRate: 0, // This would need a separate API endpoint
         });
 
-        console.log('📊 Calculated stats:', { totalCourses, totalStudents, totalRevenue, avgRating });
       } else {
-        console.error('❌ Failed to load courses:', coursesResponse.error);
         setError(coursesResponse.error || 'Failed to load courses');
       }
 
@@ -130,7 +126,6 @@ export default function InstructorDashboard() {
       setActivities([]);
 
     } catch (error) {
-      console.error('❌ Error loading dashboard data:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMsg);
     } finally {
@@ -162,15 +157,9 @@ export default function InstructorDashboard() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('🔄 Instructor logout confirmed');
-              console.log('🔄 Current user before logout:', user);
-              
               await logout();
-              
-              console.log('🚪 Instructor logged out successfully, redirecting to login');
               router.replace('/login');
-            } catch (error) {
-              console.error('❌ Logout error:', error);
+            } catch {
               // Even if logout fails, redirect to login for safety
               router.replace('/login');
             }
@@ -256,49 +245,6 @@ export default function InstructorDashboard() {
             size="medium"
             style={styles.actionButton}
           />
-          {__DEV__ && (
-            <Button
-              title="🔧 Debug Auth"
-              onPress={async () => {
-                try {
-                  const ApiService = (await import('@/services/api')).default;
-                  const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-                  
-                  const isAuth = await ApiService.isAuthenticated();
-                  const user = await ApiService.getCurrentUser();
-                  const token = await AsyncStorage.getItem('authToken');
-                  
-                  Alert.alert('Debug Info', `Auth: ${isAuth}\nUser: ${user?.name || 'none'}\nRole: ${user?.role || 'none'}\nToken: ${token ? 'exists' : 'missing'}`);
-                } catch (error) {
-                  Alert.alert('Debug Error', String(error));
-                }
-              }}
-              variant="secondary"
-              size="small"
-              style={styles.actionButton}
-            />
-          )}
-          {__DEV__ && (
-            <Button
-              title="🔧 Advanced Debug"
-              onPress={() => router.push('./debug')}
-              variant="secondary"
-              size="small"
-              style={styles.actionButton}
-            />
-          )}
-          {__DEV__ && (
-            <Button
-              title="🔄 Reload Data"
-              onPress={() => {
-                setIsLoading(true);
-                loadDashboardData();
-              }}
-              variant="secondary"
-              size="small"
-              style={styles.actionButton}
-            />
-          )}
         </Card>
 
         {/* Statistics Overview */}
@@ -403,11 +349,6 @@ export default function InstructorDashboard() {
             </View>
             <Text style={styles.goalProgress}>${stats.totalRevenue}/$15,000 ({Math.round((stats.totalRevenue / 15000) * 100)}%)</Text>
           </View>
-          {__DEV__ && (
-            <Text style={styles.emptyText}>
-              Note: Goals are placeholder values. Implement goal setting feature in backend.
-            </Text>
-          )}
         </Card>
       </ScrollView>
     </SafeAreaView>
@@ -452,12 +393,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    paddingRight: 4, // Add padding to keep button in bounds
   },
   logoutButton: {
     backgroundColor: '#dc3545',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 6,
+    maxWidth: 80, // Limit button width
   },
   logoutButtonText: {
     color: COLORS.WHITE,

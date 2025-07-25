@@ -47,7 +47,7 @@ export default function EditCourseScreen() {
   const [level, setLevel] = useState('');
   const [content, setContent] = useState('');
   const [duration, setDuration] = useState('');
-  const [status, setStatus] = useState('draft');
+  const [status, setStatus] = useState('Draft');
 
   // Categories and levels
   const categories = [
@@ -57,17 +57,15 @@ export default function EditCourseScreen() {
   ];
   
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
-  const statuses = ['draft', 'published', 'archived'];
+  const statuses = ['Draft', 'Published', 'Archived'];
 
   const loadCourse = useCallback(async () => {
     if (!courseId) return;
     
     try {
       setError(null);
-      console.log('🔄 Loading course for editing:', courseId);
       
       const response = await ApiService.getCourseDetails(courseId);
-      console.log('📚 Course details response:', response);
       
       if (response.success) {
         const courseData = response.data;
@@ -81,13 +79,16 @@ export default function EditCourseScreen() {
         setLevel(courseData.level || '');
         setContent(courseData.content || '');
         setDuration(String(courseData.duration || ''));
-        setStatus(courseData.status || 'draft');
+        // Ensure status matches UI options (Draft, Published, Archived)
+        const courseStatus = courseData.status || 'Draft';
+        // Handle both capitalized and lowercase status from API
+        const formattedStatus = courseStatus.charAt(0).toUpperCase() + courseStatus.slice(1).toLowerCase();
+        setStatus(formattedStatus);
       } else {
         setError(response.error || 'Failed to load course');
         Alert.alert('Error', response.error || 'Failed to load course details');
       }
     } catch (error) {
-      console.error('❌ Error loading course:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMsg);
       Alert.alert('Error', 'Failed to load course details');
@@ -95,6 +96,12 @@ export default function EditCourseScreen() {
       setIsLoading(false);
     }
   }, [courseId]);
+
+  const handleDurationChange = (text: string) => {
+    // Only allow numbers
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setDuration(numericValue);
+  };
 
   const validateForm = () => {
     if (!title.trim()) {
@@ -117,6 +124,10 @@ export default function EditCourseScreen() {
       Alert.alert('Validation Error', 'Please select a level');
       return false;
     }
+    if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
+      Alert.alert('Validation Error', 'Please enter a valid duration in hours');
+      return false;
+    }
     return true;
   };
 
@@ -135,14 +146,13 @@ export default function EditCourseScreen() {
         price: Number(price),
         level,
         content: content.trim(),
-        duration: duration.trim(),
-        status,
+        duration: Number(duration),
+        status: status, // Keep original capitalization for API
       };
       
       console.log('📝 Course data to update:', courseData);
       
       const response = await ApiService.updateCourse(courseId, courseData);
-      console.log('💾 Update response:', response);
       
       if (response.success) {
         Alert.alert(
@@ -151,15 +161,14 @@ export default function EditCourseScreen() {
           [
             {
               text: 'OK',
-              onPress: () => router.back()
+              onPress: () => router.push('./courses')
             }
           ]
         );
       } else {
         Alert.alert('Error', response.error || 'Failed to update course');
       }
-    } catch (error) {
-      console.error('❌ Error updating course:', error);
+    } catch {
       Alert.alert('Error', 'Failed to update course');
     } finally {
       setIsSaving(false);
@@ -172,7 +181,7 @@ export default function EditCourseScreen() {
       'Are you sure you want to discard your changes?',
       [
         { text: 'Continue Editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => router.back() }
+        { text: 'Discard', style: 'destructive', onPress: () => router.push('./courses') }
       ]
     );
   };
@@ -198,7 +207,7 @@ export default function EditCourseScreen() {
           <Text style={styles.errorText}>Course not found</Text>
           <Button
             title="Go Back"
-            onPress={() => router.back()}
+            onPress={() => router.push('./courses')}
             style={styles.backButton}
           />
         </View>
@@ -317,10 +326,11 @@ export default function EditCourseScreen() {
             />
 
             <Input
-              label="Duration"
+              label="Duration (Hours) *"
               value={duration}
-              onChangeText={setDuration}
-              placeholder="e.g., 10 hours, 5 weeks, etc."
+              onChangeText={handleDurationChange}
+              placeholder="e.g., 10"
+              keyboardType="numeric"
               style={styles.input}
             />
           </Card>
@@ -371,9 +381,9 @@ export default function EditCourseScreen() {
             
             <View style={styles.statusInfo}>
               <Text style={styles.statusInfoText}>
-                {status === 'draft' && '• Draft: Course is not visible to students'}
-                {status === 'published' && '• Published: Course is live and available for enrollment'}
-                {status === 'archived' && '• Archived: Course is hidden but existing students can still access'}
+                {status === 'Draft' && '• Draft: Course is not visible to students'}
+                {status === 'Published' && '• Published: Course is live and available for enrollment'}
+                {status === 'Archived' && '• Archived: Course is hidden but existing students can still access'}
               </Text>
             </View>
           </Card>
@@ -393,16 +403,6 @@ export default function EditCourseScreen() {
               style={styles.saveButton}
             />
           </View>
-
-          {/* Debug Info */}
-          {__DEV__ && (
-            <Card style={styles.card}>
-              <Text style={styles.cardTitle}>🔧 Debug Info</Text>
-              <Text style={styles.debugText}>Course ID: {courseId}</Text>
-              <Text style={styles.debugText}>Current Status: {status}</Text>
-              <Text style={styles.debugText}>Form Valid: {validateForm().toString()}</Text>
-            </Card>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -548,10 +548,5 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 2,
-  },
-  debugText: {
-    fontSize: 12,
-    color: COLORS.GRAY_MEDIUM,
-    marginBottom: 4,
   },
 });

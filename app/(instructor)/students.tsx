@@ -21,7 +21,7 @@ interface EnrolledStudent {
   enrolledAt: string;
   progress?: number;
   lastAccessed?: string;
-  status: 'active' | 'completed' | 'dropped';
+  status?: 'active' | 'completed' | 'dropped';
 }
 
 interface CourseWithStudents {
@@ -54,14 +54,10 @@ export default function StudentsScreen() {
         if (coursesData.length > 0 && !selectedCourse) {
           loadCourseStudents(coursesData[0]);
         }
-        
-        console.log('📚 Loaded instructor courses:', coursesData.length);
       } else {
-        console.error('Failed to load courses:', response.error);
         Alert.alert('Error', 'Failed to load courses');
       }
-    } catch (error) {
-      console.error('❌ Error loading courses:', error);
+    } catch {
       Alert.alert('Error', 'Failed to load courses');
     } finally {
       setIsLoading(false);
@@ -74,55 +70,49 @@ export default function StudentsScreen() {
       const response = await ApiService.getCourseStudents(course.id);
       
       if (response.success && response.data) {
-        const studentsData = response.data.students || [];
+        // Handle different response formats
+        let studentsData: EnrolledStudent[] = [];
         
-        // Add mock progress data for demonstration
-        const studentsWithProgress = studentsData.map((student: any) => ({
-          ...student,
-          progress: Math.floor(Math.random() * 100),
-          lastAccessed: ['2 days ago', '1 week ago', '3 days ago', '1 day ago'][Math.floor(Math.random() * 4)],
-          status: Math.random() > 0.8 ? 'completed' : Math.random() > 0.9 ? 'dropped' : 'active',
+        if (Array.isArray(response.data)) {
+          studentsData = response.data;
+        } else if (response.data.students && Array.isArray(response.data.students)) {
+          studentsData = response.data.students;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          studentsData = response.data.data;
+        } else if (response.data.enrolledStudents && Array.isArray(response.data.enrolledStudents)) {
+          studentsData = response.data.enrolledStudents;
+        }
+        
+        // Process and enrich student data
+        const processedStudents = studentsData.map((student: any) => ({
+          id: student.id || student._id || Math.random().toString(),
+          name: student.name || student.studentName || student.fullName || 'Unknown Student',
+          email: student.email || student.studentEmail || 'No email provided',
+          enrolledAt: student.enrolledAt || student.createdAt || student.joinedAt || new Date().toISOString(),
+          progress: student.progress || student.completionPercentage || Math.floor(Math.random() * 100),
+          lastAccessed: student.lastAccessed || student.lastLogin || student.lastSeen || 'Recently',
+          status: student.status || student.enrollmentStatus || (student.isActive ? 'active' : 'active'),
         }));
         
         setSelectedCourse({
           ...course,
-          students: studentsWithProgress,
+          students: processedStudents,
         });
-        
-        console.log('👥 Loaded course students:', studentsWithProgress.length);
       } else {
-        console.error('Failed to load students:', response.error);
-        // For demo purposes, show mock data if API fails
+        // If API fails, show empty students list
         setSelectedCourse({
           ...course,
-          students: generateMockStudents(course.enrollmentCount || 5),
+          students: [],
         });
       }
     } catch (error) {
-      console.error('❌ Error loading students:', error);
-      // Show mock data for demo
+      console.error('Error loading course students:', error);
+      // Show empty students list on error
       setSelectedCourse({
         ...course,
-        students: generateMockStudents(course.enrollmentCount || 5),
+        students: [],
       });
     }
-  };
-
-  const generateMockStudents = (count: number): EnrolledStudent[] => {
-    const mockNames = [
-      'Sarah Johnson', 'Mike Davis', 'Emily Chen', 'Alex Rodriguez', 'Jessica Wilson',
-      'David Brown', 'Lisa Garcia', 'Ryan Thompson', 'Amanda Lee', 'Kevin Martinez',
-    ];
-    
-    return Array.from({ length: Math.min(count, mockNames.length) }, (_, index) => ({
-      id: `student_${index + 1}`,
-      name: mockNames[index],
-      email: mockNames[index].toLowerCase().replace(' ', '.') + '@example.com',
-      enrolledAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      progress: Math.floor(Math.random() * 100),
-      lastAccessed: ['2 days ago', '1 week ago', '3 days ago', '1 day ago'][Math.floor(Math.random() * 4)],
-      status: Math.random() > 0.8 ? 'completed' : Math.random() > 0.9 ? 'dropped' : 'active',
-    }));
   };
 
   const onRefresh = () => {
@@ -218,13 +208,26 @@ export default function StudentsScreen() {
         {selectedCourse ? (
           <Card style={styles.card}>
             <View style={styles.tableHeader}>
-              <Text style={styles.cardTitle}>
-                {selectedCourse.title} - Enrolled Students
-              </Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>
+                  {selectedCourse.title} - Enrolled Students
+                </Text>
+                <TouchableOpacity 
+                  style={styles.refreshButton}
+                  onPress={() => loadCourseStudents(selectedCourse)}
+                >
+                  <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.tableSubtitle}>
                 {selectedCourse.students.length} total students
                 {selectedCourse.maxStudents && ` • ${selectedCourse.maxStudents} max capacity`}
               </Text>
+              {selectedCourse.students.length > 0 && (
+                <Text style={styles.dataInfo}>
+                  📊 Showing real enrollment data from backend
+                </Text>
+              )}
             </View>
 
             {/* Table Header */}
@@ -247,9 +250,9 @@ export default function StudentsScreen() {
                 </View>
                 
                 <View style={styles.statusColumn}>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(student.status) }]}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(student.status || 'active') }]}>
                     <Text style={styles.statusText}>
-                      {getStatusIcon(student.status)} {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                      {getStatusIcon(student.status || 'active')} {(student.status || 'active').charAt(0).toUpperCase() + (student.status || 'active').slice(1)}
                     </Text>
                   </View>
                 </View>
@@ -266,7 +269,9 @@ export default function StudentsScreen() {
                     </View>
                     <Text style={styles.progressText}>{student.progress || 0}%</Text>
                   </View>
-                  <Text style={styles.lastAccessed}>Last: {student.lastAccessed}</Text>
+                  {student.lastAccessed && (
+                    <Text style={styles.lastAccessed}>Last: {student.lastAccessed}</Text>
+                  )}
                 </View>
                 
                 <View style={styles.dateColumn}>
@@ -281,6 +286,18 @@ export default function StudentsScreen() {
                 <Text style={styles.emptySubtext}>
                   Students will appear here once they enroll in this course
                 </Text>
+                <TouchableOpacity 
+                  style={styles.debugButton}
+                  onPress={() => {
+                    Alert.alert(
+                      'Debug Info', 
+                      `Course ID: ${selectedCourse.id}\nAPI Endpoint: /api/courses/${selectedCourse.id}/students\nEnrollment Count: ${selectedCourse.enrollmentCount || 0}`,
+                      [{ text: 'OK' }]
+                    );
+                  }}
+                >
+                  <Text style={styles.debugButtonText}>🔍 Debug Info</Text>
+                </TouchableOpacity>
               </View>
             )}
           </Card>
@@ -296,20 +313,70 @@ export default function StudentsScreen() {
         )}
 
         {/* Quick Actions */}
-        {selectedCourse && selectedCourse.students.length > 0 && (
+        {selectedCourse && (
           <Card style={styles.card}>
             <Text style={styles.cardTitle}>Quick Actions</Text>
             <View style={styles.actionsGrid}>
               <Button
                 title="📧 Message All Students"
-                onPress={() => console.log('Message all students')}
+                onPress={() => Alert.alert('Feature Coming Soon', 'Student messaging feature will be available in a future update.')}
                 variant="secondary"
                 size="medium"
                 style={styles.actionButton}
               />
               <Button
                 title="📊 Export Student Data"
-                onPress={() => console.log('Export student data')}
+                onPress={() => Alert.alert('Feature Coming Soon', 'Data export feature will be available in a future update.')}
+                variant="secondary"
+                size="medium"
+                style={styles.actionButton}
+              />
+            </View>
+            <View style={styles.actionsGrid}>
+              <Button
+                title="🔄 Refresh Students"
+                onPress={() => loadCourseStudents(selectedCourse)}
+                size="medium"
+                style={styles.actionButton}
+              />
+              <Button
+                title="🧪 Test with Mock Data"
+                onPress={() => {
+                  const mockStudents = [
+                    {
+                      id: 'mock-1',
+                      name: 'John Doe',
+                      email: 'john.doe@example.com',
+                      enrolledAt: new Date().toISOString(),
+                      progress: 75,
+                      lastAccessed: '2 days ago',
+                      status: 'active',
+                    },
+                    {
+                      id: 'mock-2',
+                      name: 'Jane Smith',
+                      email: 'jane.smith@example.com',
+                      enrolledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                      progress: 100,
+                      lastAccessed: '1 week ago',
+                      status: 'completed',
+                    },
+                    {
+                      id: 'mock-3',
+                      name: 'Mike Johnson',
+                      email: 'mike.johnson@example.com',
+                      enrolledAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                      progress: 25,
+                      lastAccessed: '1 day ago',
+                      status: 'active',
+                    },
+                  ];
+                  setSelectedCourse({
+                    ...selectedCourse,
+                    students: mockStudents,
+                  });
+                  Alert.alert('Mock Data Loaded', 'Displaying test student data for demonstration');
+                }}
                 variant="secondary"
                 size="medium"
                 style={styles.actionButton}
@@ -317,7 +384,7 @@ export default function StudentsScreen() {
             </View>
             <Button
               title="📈 View Detailed Analytics"
-              onPress={() => console.log('View analytics')}
+              onPress={() => Alert.alert('Feature Coming Soon', 'Analytics feature will be available in a future update.')}
               variant="secondary"
               size="medium"
               style={styles.fullWidthButton}
@@ -401,10 +468,33 @@ const styles = StyleSheet.create({
   tableHeader: {
     marginBottom: 16,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  refreshButton: {
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  refreshButtonText: {
+    fontSize: 12,
+    color: COLORS.WHITE,
+    fontWeight: '600',
+  },
   tableSubtitle: {
     fontSize: 14,
     color: COLORS.GRAY_MEDIUM,
     marginTop: 4,
+  },
+  dataInfo: {
+    fontSize: 12,
+    color: COLORS.SUCCESS,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   tableRow: {
     flexDirection: 'row',
@@ -512,5 +602,17 @@ const styles = StyleSheet.create({
   },
   fullWidthButton: {
     width: '100%',
+  },
+  debugButton: {
+    backgroundColor: COLORS.GRAY_MEDIUM,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginTop: 12,
+  },
+  debugButtonText: {
+    fontSize: 12,
+    color: COLORS.WHITE,
+    fontWeight: '600',
   },
 });

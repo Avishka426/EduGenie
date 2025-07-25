@@ -1,73 +1,94 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-} from 'react-native';
-import { COLORS } from '@/constants';
-import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import { COLORS } from '@/constants';
+import ApiService from '@/services/api';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function CoursesScreen() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const categories = ['All', 'Web Development', 'Mobile Development', 'Data Science', 'Design'];
 
-  // Mock courses data
-  const courses = [
-    {
-      id: '1',
-      title: 'React Native Complete Guide',
-      instructor: 'John Doe',
-      category: 'Mobile Development',
-      price: 89.99,
-      rating: 4.8,
-      students: 1234,
-      duration: '15 hours',
-      level: 'Beginner',
-      description: 'Learn React Native from scratch and build amazing mobile apps.',
-    },
-    {
-      id: '2',
-      title: 'Full Stack Web Development',
-      instructor: 'Jane Smith',
-      category: 'Web Development',
-      price: 99.99,
-      rating: 4.7,
-      students: 2567,
-      duration: '25 hours',
-      level: 'Intermediate',
-      description: 'Master MERN stack development with hands-on projects.',
-    },
-    {
-      id: '3',
-      title: 'UI/UX Design Fundamentals',
-      instructor: 'Mike Johnson',
-      category: 'Design',
-      price: 69.99,
-      rating: 4.9,
-      students: 987,
-      duration: '12 hours',
-      level: 'Beginner',
-      description: 'Learn the principles of great user interface and experience design.',
-    },
-  ];
+  useEffect(() => {
+    loadCourses();
+  }, []);
 
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.browseCourses();
+      
+      if (response.success && response.data) {
+        // Handle both array and object with courses property
+        const courseData = Array.isArray(response.data) ? response.data : 
+                          (response.data.courses || []);
+        setCourses(courseData);
+      } else {
+        Alert.alert('Error', 'Failed to load courses');
+        setCourses([]);
+      }
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      Alert.alert('Error', 'Failed to load courses');
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredCourses = courses.filter((course: any) => {
+    const matchesSearch = course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.instructorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.instructor?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || 
+                           course.category === selectedCategory ||
+                           course.subject === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const enrollInCourse = (courseId: string, courseTitle: string) => {
-    console.log(`Enrolling in course: ${courseTitle}`);
-    // This will be implemented with backend integration
+  const enrollInCourse = async (courseId: string, courseTitle: string) => {
+    try {
+      setEnrolling(courseId);
+      const response = await ApiService.enrollInCourse(courseId);
+      
+      if (response.success) {
+        Alert.alert(
+          'Success!', 
+          `Successfully enrolled in ${courseTitle}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Optionally refresh courses or navigate to enrolled courses
+                loadCourses();
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.message || 'Failed to enroll in course');
+      }
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      Alert.alert('Error', 'Failed to enroll in course');
+    } finally {
+      setEnrolling(null);
+    }
   };
 
   return (
@@ -119,52 +140,86 @@ export default function CoursesScreen() {
         </Text>
 
         {/* Courses List */}
-        {filteredCourses.map((course) => (
-          <Card key={course.id} style={styles.courseCard}>
-            <View style={styles.courseHeader}>
-              <Text style={styles.courseTitle}>{course.title}</Text>
-              <View style={styles.priceContainer}>
-                <Text style={styles.priceText}>${course.price}</Text>
-              </View>
-            </View>
-            
-            <Text style={styles.instructorText}>by {course.instructor}</Text>
-            
-            <View style={styles.courseStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>⭐ {course.rating}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>👥 {course.students} students</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>⏱️ {course.duration}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>📊 {course.level}</Text>
-              </View>
-            </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+            <Text style={styles.loadingText}>Loading courses...</Text>
+          </View>
+        ) : (
+          <>
+            {filteredCourses.map((course: any) => (
+              <Card key={course.id || course._id} style={styles.courseCard}>
+                <View style={styles.courseHeader}>
+                  <Text style={styles.courseTitle}>{course.title}</Text>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.priceText}>
+                      {course.price ? `$${course.price}` : 'Free'}
+                    </Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.instructorText}>
+                  by {course.instructorName || course.instructor || 'Unknown Instructor'}
+                </Text>
+                
+                <View style={styles.courseStats}>
+                  {course.rating && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>⭐ {course.rating}</Text>
+                    </View>
+                  )}
+                  {course.enrollmentCount && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>👥 {course.enrollmentCount} students</Text>
+                    </View>
+                  )}
+                  {course.duration && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>⏱️ {course.duration}</Text>
+                    </View>
+                  )}
+                  {course.level && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>📊 {course.level}</Text>
+                    </View>
+                  )}
+                  {course.status && (
+                    <View style={styles.statItem}>
+                      <Text style={[
+                        styles.statLabel,
+                        course.status === 'Published' ? styles.statusActive : styles.statusInactive
+                      ]}>
+                        📋 {course.status}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-            <Text style={styles.courseDescription}>{course.description}</Text>
+                <Text style={styles.courseDescription}>
+                  {course.description || 'No description available.'}
+                </Text>
 
-            <Button
-              title="Enroll Now"
-              onPress={() => enrollInCourse(course.id, course.title)}
-              size="medium"
-              style={styles.enrollButton}
-            />
-          </Card>
-        ))}
+                <Button
+                  title={enrolling === (course.id || course._id) ? "Enrolling..." : "Enroll Now"}
+                  onPress={() => enrollInCourse(course.id || course._id, course.title)}
+                  size="medium"
+                  style={styles.enrollButton}
+                  disabled={enrolling === (course.id || course._id)}
+                />
+              </Card>
+            ))}
 
-        {filteredCourses.length === 0 && (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              No courses found matching your criteria.
-            </Text>
-            <Text style={styles.emptySubtext}>
-              Try adjusting your search terms or category filter.
-            </Text>
-          </Card>
+            {filteredCourses.length === 0 && !loading && (
+              <Card style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  No courses found matching your criteria.
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  Try adjusting your search terms or category filter.
+                </Text>
+              </Card>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -293,5 +348,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.GRAY_LIGHT,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.GRAY_MEDIUM,
+    marginTop: 12,
+  },
+  statusActive: {
+    color: COLORS.SUCCESS,
+  },
+  statusInactive: {
+    color: COLORS.GRAY_MEDIUM,
   },
 });
