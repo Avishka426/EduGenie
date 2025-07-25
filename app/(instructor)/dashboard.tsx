@@ -12,8 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 interface InstructorStats {
@@ -211,12 +210,7 @@ export default function InstructorDashboard() {
                 <Text style={styles.errorText}>⚠️ {error}</Text>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
 

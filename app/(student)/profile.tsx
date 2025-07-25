@@ -1,45 +1,236 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
 import { COLORS } from '@/constants';
 import { useAuth } from '@/context/AuthContext';
-import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-
+import ApiService from '@/services/api';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 export default function ProfileScreen() {
   const router = useRouter();
   const { logout, user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   
-  // Use real user data from auth context or mock data
+  // Use real user data from auth context
   const [userProfile, setUserProfile] = useState({
-    name: user?.username || 'John Student',
-    email: user?.email || 'john.student@example.com',
-    phone: '+1 (555) 123-4567',
-    bio: 'Passionate learner interested in mobile development and AI.',
-    joinDate: 'January 2024',
-    location: 'New York, USA',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: '',
+    bio: '',
+    joinDate: 'Recently joined',
+    location: '',
   });
 
   const [editedProfile, setEditedProfile] = useState(userProfile);
 
-  // Mock learning stats
-  const learningStats = {
-    totalCourses: 3,
-    completedCourses: 1,
-    totalHours: 45,
-    certificates: 1,
-    streak: 7,
-    favoriteCategory: 'Mobile Development',
+  // Learning stats from API
+  const [learningStats, setLearningStats] = useState({
+    totalCourses: 0,
+    completedCourses: 0,
+    totalHours: 0,
+    certificates: 0,
+    streak: 0,
+    favoriteCategory: 'Not determined yet',
+  });
+
+  useEffect(() => {
+    loadLearningStats();
+    loadProfileData();
+  }, []);
+
+  // Debug log to track profilePicture state changes
+  useEffect(() => {
+    console.log('Profile picture state changed:', profilePicture);
+  }, [profilePicture]);
+
+  const loadProfileData = async () => {
+    try {
+      const response = await ApiService.getProfile();
+      console.log('Profile data response:', response); // Debug log
+      
+      if (response.success && response.data) {
+        const profile = response.data.user || response.data; // Handle nested user object
+        console.log('Profile picture from API:', profile.profilePicture); // Debug log
+        
+        setProfilePicture(profile.profilePicture || null);
+        
+        // Update user profile with data from API
+        setUserProfile(prev => ({
+          ...prev,
+          name: profile.name || prev.name,
+          email: profile.email || prev.email,
+          phone: profile.phone || prev.phone,
+          bio: profile.bio || prev.bio,
+          location: profile.location || prev.location,
+        }));
+        setEditedProfile(prev => ({
+          ...prev,
+          name: profile.name || prev.name,
+          email: profile.email || prev.email,
+          phone: profile.phone || prev.phone,
+          bio: profile.bio || prev.bio,
+          location: profile.location || prev.location,
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+    }
+  };
+
+  const loadLearningStats = async () => {
+    try {
+      setIsLoading(true);
+      // Get enrolled courses to calculate stats
+      const response = await ApiService.getEnrolledCourses();
+      
+      if (response.success && response.data) {
+        const courses = response.data.enrolledCourses || response.data || [];
+        
+        // Calculate real learning statistics
+        const totalCourses = courses.length;
+        const completedCourses = courses.filter((course: any) => 
+          course.status === 'completed').length;
+        const totalHours = courses.reduce((total: number, course: any) => 
+          total + (course.duration || 0), 0);
+        
+        // Determine favorite category
+        const categoryCount: { [key: string]: number } = {};
+        courses.forEach((course: any) => {
+          const category = course.category || 'Other';
+          categoryCount[category] = (categoryCount[category] || 0) + 1;
+        });
+        const favoriteCategory = Object.keys(categoryCount).length > 0 
+          ? Object.keys(categoryCount).reduce((a, b) => 
+              categoryCount[a] > categoryCount[b] ? a : b)
+          : 'Not determined yet';
+        
+        setLearningStats({
+          totalCourses,
+          completedCourses,
+          totalHours,
+          certificates: completedCourses, // Assuming certificates = completed courses
+          streak: 0, // This would need to be tracked by the backend
+          favoriteCategory,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading learning stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImagePicker = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera roll permission to upload profile picture.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images', // Lowercase string literal
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadProfilePicture(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const uploadProfilePicture = async (asset: ImagePicker.ImagePickerAsset) => {
+    try {
+      setIsUploadingPicture(true);
+
+      const response = await ApiService.uploadProfilePicture(asset.uri);
+      console.log('Upload response:', response); // Debug log
+
+      if (response.success && response.data) {
+        // Try different possible response formats
+        const newProfilePicture = response.data.profilePicture || response.data.imageUrl || response.data.url;
+        console.log('New profile picture URL:', newProfilePicture); // Debug log
+        
+        // Ensure the URL is valid
+        if (newProfilePicture && (newProfilePicture.startsWith('http') || newProfilePicture.startsWith('https'))) {
+          setProfilePicture(newProfilePicture);
+          
+          // Refresh profile data to ensure we have the latest information
+          await loadProfileData();
+          
+          Alert.alert('Success', 'Profile picture updated successfully!');
+        } else {
+          console.error('Invalid image URL received:', newProfilePicture);
+          Alert.alert('Error', 'Invalid image URL received from server');
+        }
+      } else {
+        console.error('Upload failed:', response.error); // Debug log
+        Alert.alert('Error', response.error || 'Failed to upload profile picture');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+    } finally {
+      setIsUploadingPicture(false);
+    }
+  };
+
+  const removeProfilePicture = async () => {
+    try {
+      Alert.alert(
+        'Remove Profile Picture',
+        'Are you sure you want to remove your profile picture?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setIsUploadingPicture(true);
+                const response = await ApiService.removeProfilePicture();
+                
+                if (response.success) {
+                  setProfilePicture(null);
+                  Alert.alert('Success', 'Profile picture removed successfully!');
+                } else {
+                  Alert.alert('Error', response.error || 'Failed to remove profile picture');
+                }
+              } catch (error) {
+                console.error('Error removing profile picture:', error);
+                Alert.alert('Error', 'Failed to remove profile picture. Please try again.');
+              } finally {
+                setIsUploadingPicture(false);
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error in removeProfilePicture:', error);
+    }
   };
 
   const handleSaveProfile = () => {
@@ -77,24 +268,85 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>My Profile</Text>
-          {!isEditing && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Debug refresh button */}
             <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setIsEditing(true)}
+              style={[styles.editButton, { backgroundColor: COLORS.SUCCESS }]}
+              onPress={loadProfileData}
             >
-              <Text style={styles.editButtonText}>Edit</Text>
+              <Text style={styles.editButtonText}>↻</Text>
             </TouchableOpacity>
-          )}
+            
+            {!isEditing && (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setIsEditing(true)}
+              >
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Profile Info */}
         <Card style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {userProfile.name.split(' ').map(n => n[0]).join('')}
-              </Text>
+            <TouchableOpacity onPress={handleImagePicker} style={styles.avatar}>
+              {profilePicture ? (
+                <Image 
+                  source={{ 
+                    uri: profilePicture,
+                    cache: 'reload' // Force refresh the image
+                  }} 
+                  style={styles.avatarImage}
+                  onLoad={() => console.log('Image loaded successfully:', profilePicture)}
+                  onError={(error) => {
+                    console.error('Image load error:', error);
+                    console.log('Failed image URI:', profilePicture);
+                    // If image fails to load, reset to null to show initials
+                    setProfilePicture(null);
+                  }}
+                />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {userProfile.name.split(' ').map((n: string) => n[0]).join('')}
+                </Text>
+              )}
+            </TouchableOpacity>
+            
+            {/* Profile Picture Actions */}
+            <View style={styles.avatarActions}>
+              <TouchableOpacity 
+                onPress={handleImagePicker}
+                style={styles.avatarActionButton}
+                disabled={isUploadingPicture}
+              >
+                <Text style={styles.avatarActionText}>
+                  {isUploadingPicture ? 'Uploading...' : (profilePicture ? 'Change' : 'Add Photo')}
+                </Text>
+              </TouchableOpacity>
+              
+              {profilePicture && (
+                <TouchableOpacity 
+                  onPress={removeProfilePicture}
+                  style={[styles.avatarActionButton, styles.avatarRemoveButton]}
+                  disabled={isUploadingPicture}
+                >
+                  <Text style={[styles.avatarActionText, styles.avatarRemoveText]}>
+                    Remove
+                  </Text>
+                </TouchableOpacity>
+              )}
+              
+              {/* Debug button - remove this in production */}
+              <TouchableOpacity 
+                onPress={() => Alert.alert('Debug Info', `Profile Picture URL: ${profilePicture || 'No image set'}`)}
+                style={[styles.avatarActionButton, { backgroundColor: COLORS.WARNING }]}
+              >
+                <Text style={styles.avatarActionText}>Debug</Text>
+              </TouchableOpacity>
             </View>
+
             <Text style={styles.memberSince}>
               Member since {userProfile.joinDate}
             </Text>
@@ -167,32 +419,39 @@ export default function ProfileScreen() {
         {/* Learning Statistics */}
         <Card style={styles.statsCard}>
           <Text style={styles.cardTitle}>Learning Statistics</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{learningStats.totalCourses}</Text>
-              <Text style={styles.statLabel}>Enrolled Courses</Text>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+              <Text style={styles.loadingText}>Loading your learning progress...</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{learningStats.completedCourses}</Text>
-              <Text style={styles.statLabel}>Completed</Text>
+          ) : (
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{learningStats.totalCourses}</Text>
+                <Text style={styles.statLabel}>Enrolled Courses</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{learningStats.completedCourses}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{learningStats.totalHours}</Text>
+                <Text style={styles.statLabel}>Hours Learned</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{learningStats.certificates}</Text>
+                <Text style={styles.statLabel}>Certificates</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{learningStats.streak || 'N/A'}</Text>
+                <Text style={styles.statLabel}>Day Streak</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statCategory}>{learningStats.favoriteCategory}</Text>
+                <Text style={styles.statLabel}>Favorite Category</Text>
+              </View>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{learningStats.totalHours}</Text>
-              <Text style={styles.statLabel}>Hours Learned</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{learningStats.certificates}</Text>
-              <Text style={styles.statLabel}>Certificates</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{learningStats.streak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statCategory}>{learningStats.favoriteCategory}</Text>
-              <Text style={styles.statLabel}>Favorite Category</Text>
-            </View>
-          </View>
+          )}
         </Card>
 
         {/* Quick Actions */}
@@ -392,5 +651,42 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     width: '100%',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.GRAY_MEDIUM,
+    marginTop: 12,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+  },
+  avatarActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 8,
+  },
+  avatarActionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: 16,
+  },
+  avatarActionText: {
+    fontSize: 12,
+    color: COLORS.WHITE,
+    fontWeight: '500',
+  },
+  avatarRemoveButton: {
+    backgroundColor: COLORS.ERROR,
+  },
+  avatarRemoveText: {
+    color: COLORS.WHITE,
   },
 });

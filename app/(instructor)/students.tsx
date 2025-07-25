@@ -4,14 +4,14 @@ import { COLORS } from '@/constants';
 import ApiService from '@/services/api';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface EnrolledStudent {
@@ -50,15 +50,20 @@ export default function StudentsScreen() {
         const coursesData = response.data.courses || response.data || [];
         setCourses(coursesData);
         
-        // Auto-select first course if available
+        // Auto-select first course if available and no course is currently selected
         if (coursesData.length > 0 && !selectedCourse) {
-          loadCourseStudents(coursesData[0]);
+          // Add a small delay to ensure proper state management
+          setTimeout(() => {
+            loadCourseStudents(coursesData[0]);
+          }, 100);
         }
       } else {
-        Alert.alert('Error', 'Failed to load courses');
+        console.error('Failed to load instructor courses:', response);
+        Alert.alert('Error', response.message || 'Failed to load courses');
       }
-    } catch {
-      Alert.alert('Error', 'Failed to load courses');
+    } catch (error) {
+      console.error('Error loading instructor courses:', error);
+      Alert.alert('Error', 'Failed to load courses. Please check your connection.');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -89,8 +94,8 @@ export default function StudentsScreen() {
           name: student.name || student.studentName || student.fullName || 'Unknown Student',
           email: student.email || student.studentEmail || 'No email provided',
           enrolledAt: student.enrolledAt || student.createdAt || student.joinedAt || new Date().toISOString(),
-          progress: student.progress || student.completionPercentage || Math.floor(Math.random() * 100),
-          lastAccessed: student.lastAccessed || student.lastLogin || student.lastSeen || 'Recently',
+          progress: student.progress || student.completionPercentage || 0,
+          lastAccessed: student.lastAccessed || student.lastLogin || student.lastSeen || 'Not available',
           status: student.status || student.enrollmentStatus || (student.isActive ? 'active' : 'active'),
         }));
         
@@ -99,14 +104,41 @@ export default function StudentsScreen() {
           students: processedStudents,
         });
       } else {
-        // If API fails, show empty students list
+        // Handle specific error messages
+        const errorMessage = response.message || response.error || 'Failed to load students';
+        
+        if (response.message === "You can only view students for your own courses") {
+          Alert.alert(
+            'Permission Error', 
+            `You don't have permission to view students for "${course.title}". This course might belong to another instructor.`,
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('Error', errorMessage);
+        }
+        
+        // Show empty students list
         setSelectedCourse({
           ...course,
           students: [],
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading course students:', error);
+      
+      // Handle specific HTTP status codes
+      if (error.status === 403) {
+        Alert.alert(
+          'Access Denied', 
+          `You don't have permission to view students for "${course.title}". Please make sure you are the instructor for this course.`,
+          [{ text: 'OK' }]
+        );
+      } else if (error.status === 404) {
+        Alert.alert('Not Found', 'Course or student data not found.');
+      } else {
+        Alert.alert('Error', 'Failed to load student data. Please try again.');
+      }
+      
       // Show empty students list on error
       setSelectedCourse({
         ...course,
@@ -290,9 +322,15 @@ export default function StudentsScreen() {
                   style={styles.debugButton}
                   onPress={() => {
                     Alert.alert(
-                      'Debug Info', 
-                      `Course ID: ${selectedCourse.id}\nAPI Endpoint: /api/courses/${selectedCourse.id}/students\nEnrollment Count: ${selectedCourse.enrollmentCount || 0}`,
-                      [{ text: 'OK' }]
+                      'Debug Information', 
+                      `Course ID: ${selectedCourse.id}\nCourse Title: ${selectedCourse.title}\nAPI Endpoint: /api/courses/${selectedCourse.id}/students\nReported Enrollment Count: ${selectedCourse.enrollmentCount || 0}\n\nTroubleshooting:\n• Verify you are the instructor for this course\n• Check if students have actually enrolled\n• Ensure proper authentication\n• Contact support if issues persist`,
+                      [
+                        { text: 'OK' },
+                        { 
+                          text: 'Retry', 
+                          onPress: () => loadCourseStudents(selectedCourse)
+                        }
+                      ]
                     );
                   }}
                 >
@@ -332,60 +370,9 @@ export default function StudentsScreen() {
                 style={styles.actionButton}
               />
             </View>
-            <View style={styles.actionsGrid}>
-              <Button
-                title="🔄 Refresh Students"
-                onPress={() => loadCourseStudents(selectedCourse)}
-                size="medium"
-                style={styles.actionButton}
-              />
-              <Button
-                title="🧪 Test with Mock Data"
-                onPress={() => {
-                  const mockStudents = [
-                    {
-                      id: 'mock-1',
-                      name: 'John Doe',
-                      email: 'john.doe@example.com',
-                      enrolledAt: new Date().toISOString(),
-                      progress: 75,
-                      lastAccessed: '2 days ago',
-                      status: 'active',
-                    },
-                    {
-                      id: 'mock-2',
-                      name: 'Jane Smith',
-                      email: 'jane.smith@example.com',
-                      enrolledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-                      progress: 100,
-                      lastAccessed: '1 week ago',
-                      status: 'completed',
-                    },
-                    {
-                      id: 'mock-3',
-                      name: 'Mike Johnson',
-                      email: 'mike.johnson@example.com',
-                      enrolledAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                      progress: 25,
-                      lastAccessed: '1 day ago',
-                      status: 'active',
-                    },
-                  ];
-                  setSelectedCourse({
-                    ...selectedCourse,
-                    students: mockStudents,
-                  });
-                  Alert.alert('Mock Data Loaded', 'Displaying test student data for demonstration');
-                }}
-                variant="secondary"
-                size="medium"
-                style={styles.actionButton}
-              />
-            </View>
             <Button
-              title="📈 View Detailed Analytics"
-              onPress={() => Alert.alert('Feature Coming Soon', 'Analytics feature will be available in a future update.')}
-              variant="secondary"
+              title="🔄 Refresh Students"
+              onPress={() => loadCourseStudents(selectedCourse)}
               size="medium"
               style={styles.fullWidthButton}
             />

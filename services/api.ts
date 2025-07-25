@@ -122,6 +122,59 @@ class ApiService {
     return this.request(API_ENDPOINTS.PROFILE);
   }
 
+  async uploadProfilePicture(imageUri: string) {
+    try {
+      const formData = new FormData();
+      formData.append('profilePicture', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'profile.jpg',
+      } as any);
+
+      const token = await AsyncStorage.getItem('authToken');
+      
+      console.log('🔄 Uploading profile picture:', imageUri);
+      console.log('🔄 Upload URL:', `${this.baseURL}${API_ENDPOINTS.UPLOAD_PROFILE_PICTURE}`);
+      console.log('🔄 Upload headers:', { Authorization: token ? `Bearer ${token.substring(0, 20)}...` : 'No token' });
+      
+      const response = await fetch(`${this.baseURL}${API_ENDPOINTS.UPLOAD_PROFILE_PICTURE}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Don't set Content-Type - let React Native set it automatically with boundary
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      const data = await response.json();
+      console.log('📡 Upload response:', response.status, data);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || `HTTP ${response.status}`,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error('❌ Profile picture upload error:', error);
+      return {
+        success: false,
+        error: 'Failed to upload profile picture',
+      };
+    }
+  }
+
+  async removeProfilePicture() {
+    return this.request(API_ENDPOINTS.REMOVE_PROFILE_PICTURE, {
+      method: 'DELETE',
+    });
+  }
+
   async logout() {
     try {
       // Call backend logout endpoint to invalidate token

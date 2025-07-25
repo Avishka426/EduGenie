@@ -21,8 +21,7 @@ export default function CoursesScreen() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
-
-  const categories = ['All', 'Web Development', 'Mobile Development', 'Data Science', 'Design'];
+  const [categories, setCategories] = useState(['All']);
 
   useEffect(() => {
     loadCourses();
@@ -38,14 +37,29 @@ export default function CoursesScreen() {
         const courseData = Array.isArray(response.data) ? response.data : 
                           (response.data.courses || []);
         setCourses(courseData);
+        
+        // Extract unique categories from the course data
+        const uniqueCategories = new Set(['All']);
+        courseData.forEach((course: any) => {
+          if (course.category) {
+            uniqueCategories.add(course.category);
+          }
+          if (course.subject) {
+            uniqueCategories.add(course.subject);
+          }
+        });
+        setCategories(Array.from(uniqueCategories));
+        
       } else {
         Alert.alert('Error', 'Failed to load courses');
         setCourses([]);
+        setCategories(['All']);
       }
     } catch (error) {
       console.error('Error loading courses:', error);
       Alert.alert('Error', 'Failed to load courses');
       setCourses([]);
+      setCategories(['All']);
     } finally {
       setLoading(false);
     }
@@ -159,7 +173,7 @@ export default function CoursesScreen() {
                 </View>
                 
                 <Text style={styles.instructorText}>
-                  by {course.instructorName || course.instructor || 'Unknown Instructor'}
+                  by {course.instructorName || course.instructor || 'Instructor'}
                 </Text>
                 
                 <View style={styles.courseStats}>
@@ -196,7 +210,7 @@ export default function CoursesScreen() {
                 </View>
 
                 <Text style={styles.courseDescription}>
-                  {course.description || 'No description available.'}
+                  {course.description || 'Course description coming soon.'}
                 </Text>
 
                 <Button

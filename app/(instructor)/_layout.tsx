@@ -1,7 +1,7 @@
+import { COLORS } from '@/constants';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Text } from 'react-native';
-import { COLORS } from '@/constants';
 
 export default function InstructorTabLayout() {
   return (
@@ -62,6 +62,20 @@ export default function InstructorTabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Text style={{ color, fontSize: focused ? 24 : 20 }}>👤</Text>
           ),
+        }}
+      />
+      
+      {/* Hidden screens - accessible via navigation but not shown in tabs */}
+      <Tabs.Screen
+        name="edit-course"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="course-details"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>

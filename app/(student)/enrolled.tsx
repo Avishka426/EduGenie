@@ -4,14 +4,14 @@ import { COLORS } from '@/constants';
 import ApiService from '@/services/api';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 interface EnrolledCourse {
@@ -24,7 +24,7 @@ interface EnrolledCourse {
   level: string;
   thumbnail?: string;
   enrolledAt: string;
-  // Mock fields for progress tracking
+  // Progress tracking fields from API
   progress?: number;
   totalLessons?: number;
   completedLessons?: number;
@@ -52,16 +52,17 @@ export default function EnrolledCoursesScreen() {
         // Handle the API response structure { enrolledCourses: [...] }
         const coursesData = response.data.enrolledCourses || response.data || [];
         
-        // Add mock progress data for demonstration
-        const coursesWithProgress = coursesData.map((course: any, index: number) => ({
+        // Process course data with any existing progress information
+        const coursesWithProgress = coursesData.map((course: any) => ({
           ...course,
-          progress: Math.floor(Math.random() * 100),
-          totalLessons: Math.floor(Math.random() * 20) + 10,
-          completedLessons: Math.floor(Math.random() * 15) + 5,
-          lastAccessed: index === 0 ? '2 days ago' : index === 1 ? '1 week ago' : '1 day ago',
-          status: Math.random() > 0.7 ? 'completed' : 'active',
-          nextLesson: 'Module ' + (Math.floor(Math.random() * 5) + 1),
-          estimatedTime: Math.floor(Math.random() * 3) + 1 + 'h remaining',
+          // Use API progress data if available, otherwise defaults
+          progress: course.progress || 0,
+          totalLessons: course.totalLessons || 0,
+          completedLessons: course.completedLessons || 0,
+          lastAccessed: course.lastAccessed || 'Never',
+          status: course.status || 'active',
+          nextLesson: course.nextLesson || 'Module 1',
+          estimatedTime: course.estimatedTime || 'Not estimated',
         }));
         
         setEnrolledCourses(coursesWithProgress);

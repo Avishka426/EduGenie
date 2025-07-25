@@ -51,6 +51,8 @@ export const API_ENDPOINTS = {
   LOGIN: '/api/auth/login',
   LOGOUT: '/api/auth/logout',
   PROFILE: '/api/auth/profile',
+  UPLOAD_PROFILE_PICTURE: '/api/auth/profile/picture',
+  REMOVE_PROFILE_PICTURE: '/api/auth/profile/picture',
   
   // Course endpoints - Instructors
   CREATE_COURSE: '/api/courses',
