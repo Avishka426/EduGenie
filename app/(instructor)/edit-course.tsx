@@ -429,15 +429,7 @@ export default function EditCourseScreen() {
             )}
             
             {/* Debug Information */}
-            {!isLoading && course && (
-              <View style={styles.debugContainer}>
-                <Text style={styles.debugTitle}>📊 Debug Info:</Text>
-                <Text style={styles.debugText}>Course ID: {courseId}</Text>
-                <Text style={styles.debugText}>Course Data: {JSON.stringify(course, null, 2).substring(0, 200)}...</Text>
-                <Text style={styles.debugText}>Form Values: Title={title}, Category={category}, Price={price}</Text>
-                <Text style={styles.debugText}>Original Values: {JSON.stringify(originalValues, null, 2).substring(0, 100)}...</Text>
-              </View>
-            )}
+            
           </View>
 
           {/* Basic Information */}
@@ -455,7 +447,6 @@ export default function EditCourseScreen() {
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Enter course title"
-                style={styles.input}
               />
             </View>
             
@@ -472,7 +463,7 @@ export default function EditCourseScreen() {
                 placeholder="Describe what students will learn in this course..."
                 multiline
                 numberOfLines={4}
-                style={[styles.input, styles.textArea]}
+                inputStyle={styles.textArea}
               />
             </View>
           </Card>
@@ -535,7 +526,6 @@ export default function EditCourseScreen() {
               onChangeText={setPrice}
               placeholder="0.00"
               keyboardType="numeric"
-              style={styles.input}
             />
 
             <Input
@@ -544,7 +534,6 @@ export default function EditCourseScreen() {
               onChangeText={handleDurationChange}
               placeholder="e.g., 10"
               keyboardType="numeric"
-              style={styles.input}
             />
           </Card>
 
@@ -560,7 +549,7 @@ export default function EditCourseScreen() {
                 placeholder="Describe the course curriculum, lessons, and what students will learn..."
                 multiline
                 numberOfLines={6}
-                style={[styles.input, styles.textArea]}
+                inputStyle={styles.textArea}
               />
             </View>
           </Card>
@@ -683,14 +672,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.PRIMARY,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
   },
   loadingBanner: {
     marginTop: 12,
@@ -730,13 +719,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.GRAY_DARK,
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginBottom: 20,
   },
   textAreaContainer: {
     marginBottom: 16,

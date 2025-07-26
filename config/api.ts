@@ -70,6 +70,11 @@ export const API_ENDPOINTS = {
   // Public endpoints
   COURSE_CATEGORIES: '/api/courses/categories',
   
+  // GPT-3 AI Recommendation endpoints
+  GPT_RECOMMENDATIONS: '/api/gpt/recommendations',
+  GPT_POPULAR_COURSES: '/api/gpt/popular',
+  GPT_USAGE_STATS: '/api/gpt/usage',
+  
   // Utility endpoints
   HEALTH: '/health',
   API_INFO: '/api',
@@ -78,4 +83,23 @@ export const API_ENDPOINTS = {
 export const API_CONFIG = {
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 3,
+} as const;
+
+// GPT API Configuration
+export const GPT_CONFIG = {
+  MAX_API_CALLS: 250, // Assessment limit
+  MAX_PROMPT_LENGTH: 500,
+  MIN_PROMPT_LENGTH: 10,
+  SAMPLE_PROMPTS: [
+    "I want to be a software engineer, what courses should I follow?",
+    "I'm interested in machine learning and AI, recommend some courses",
+    "What courses would help me become a web developer?",
+    "I want to learn about cybersecurity, what do you suggest?",
+    "Show me courses for mobile app development",
+    "I need courses for data science and analytics",
+    "Help me learn UI/UX design",
+    "I want to start a tech career from scratch",
+    "What courses are good for backend development?",
+    "I'm interested in cloud computing and DevOps"
+  ],
 } as const;

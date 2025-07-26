@@ -62,6 +62,12 @@ export default function StudentTabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+              name="ai-recommendations"
+              options={{
+                href: null, // Hide from tab bar
+              }}
+            />
     </Tabs>
   );
 }

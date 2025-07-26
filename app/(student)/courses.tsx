@@ -22,10 +22,26 @@ export default function CoursesScreen() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [categories, setCategories] = useState(['All']);
+  const [enrolledCourses, setEnrolledCourses] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCourses();
+    loadEnrolledCourses();
   }, []);
+
+  const loadEnrolledCourses = async () => {
+    try {
+      const response = await ApiService.getEnrolledCourses();
+      if (response.success && response.data) {
+        const enrolledData = Array.isArray(response.data) ? response.data : 
+                           (response.data.courses || []);
+        const enrolledIds = new Set(enrolledData.map((course: any) => course.id || course._id || course.courseId));
+        setEnrolledCourses(enrolledIds);
+      }
+    } catch (error) {
+      console.error('Error loading enrolled courses:', error);
+    }
+  };
 
   const loadCourses = async () => {
     try {
@@ -81,6 +97,9 @@ export default function CoursesScreen() {
       const response = await ApiService.enrollInCourse(courseId);
       
       if (response.success) {
+        // Add course to enrolled courses set
+        setEnrolledCourses(prev => new Set([...prev, courseId]));
+        
         Alert.alert(
           'Success!', 
           `Successfully enrolled in ${courseTitle}`,
@@ -88,7 +107,7 @@ export default function CoursesScreen() {
             {
               text: 'OK',
               onPress: () => {
-                // Optionally refresh courses or navigate to enrolled courses
+                // Optionally refresh courses
                 loadCourses();
               }
             }
@@ -161,67 +180,90 @@ export default function CoursesScreen() {
           </View>
         ) : (
           <>
-            {filteredCourses.map((course: any) => (
-              <Card key={course.id || course._id} style={styles.courseCard}>
-                <View style={styles.courseHeader}>
-                  <Text style={styles.courseTitle}>{course.title}</Text>
-                  <View style={styles.priceContainer}>
-                    <Text style={styles.priceText}>
-                      {course.price ? `$${course.price}` : 'Free'}
-                    </Text>
-                  </View>
-                </View>
-                
-                <Text style={styles.instructorText}>
-                  by {course.instructorName || course.instructor || 'Instructor'}
-                </Text>
-                
-                <View style={styles.courseStats}>
-                  {course.rating && (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>⭐ {course.rating}</Text>
-                    </View>
-                  )}
-                  {course.enrollmentCount && (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>👥 {course.enrollmentCount} students</Text>
-                    </View>
-                  )}
-                  {course.duration && (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>⏱️ {course.duration}</Text>
-                    </View>
-                  )}
-                  {course.level && (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>📊 {course.level}</Text>
-                    </View>
-                  )}
-                  {course.status && (
-                    <View style={styles.statItem}>
-                      <Text style={[
-                        styles.statLabel,
-                        course.status === 'Published' ? styles.statusActive : styles.statusInactive
-                      ]}>
-                        📋 {course.status}
+            {filteredCourses.map((course: any) => {
+              const courseId = course.id || course._id;
+              const isEnrolled = enrolledCourses.has(courseId);
+              
+              return (
+                <Card key={courseId} style={[
+                  styles.courseCard,
+                  isEnrolled && styles.enrolledCourseCard
+                ]}>
+                  <View style={styles.courseHeader}>
+                    <Text style={styles.courseTitle}>{course.title}</Text>
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.priceText}>
+                        {course.price ? `$${course.price}` : 'Free'}
                       </Text>
                     </View>
+                  </View>
+                  
+                  {isEnrolled && (
+                    <View style={styles.enrolledBadge}>
+                      <Text style={styles.enrolledBadgeText}>✓ Enrolled</Text>
+                    </View>
                   )}
-                </View>
+                  
+                  <Text style={styles.instructorText}>
+                    by {course.instructorName || course.instructor || 'Instructor'}
+                  </Text>
+                  
+                  <View style={styles.courseStats}>
+                    {course.rating && (
+                      <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>⭐ {course.rating}</Text>
+                      </View>
+                    )}
+                    {course.enrollmentCount && (
+                      <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>👥 {course.enrollmentCount} students</Text>
+                      </View>
+                    )}
+                    {course.duration && (
+                      <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>⏱️ {course.duration}</Text>
+                      </View>
+                    )}
+                    {course.level && (
+                      <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>📊 {course.level}</Text>
+                      </View>
+                    )}
+                    {course.status && (
+                      <View style={styles.statItem}>
+                        <Text style={[
+                          styles.statLabel,
+                          course.status === 'Published' ? styles.statusActive : styles.statusInactive
+                        ]}>
+                          📋 {course.status}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
 
-                <Text style={styles.courseDescription}>
-                  {course.description || 'Course description coming soon.'}
-                </Text>
+                  <Text style={styles.courseDescription}>
+                    {course.description || 'Course description coming soon.'}
+                  </Text>
 
-                <Button
-                  title={enrolling === (course.id || course._id) ? "Enrolling..." : "Enroll Now"}
-                  onPress={() => enrollInCourse(course.id || course._id, course.title)}
-                  size="medium"
-                  style={styles.enrollButton}
-                  disabled={enrolling === (course.id || course._id)}
-                />
-              </Card>
-            ))}
+                  <Button
+                    title={
+                      isEnrolled 
+                        ? "Already Enrolled" 
+                        : enrolling === courseId 
+                          ? "Enrolling..." 
+                          : "Enroll Now"
+                    }
+                    onPress={() => enrollInCourse(courseId, course.title)}
+                    size="medium"
+                    style={[
+                      styles.enrollButton,
+                      isEnrolled && styles.enrolledButton
+                    ]}
+                    disabled={enrolling === courseId || isEnrolled}
+                  />
+                </Card>
+              );
+            })}
 
             {filteredCourses.length === 0 && !loading && (
               <Card style={styles.emptyCard}>
@@ -296,6 +338,11 @@ const styles = StyleSheet.create({
   courseCard: {
     marginBottom: 16,
   },
+  enrolledCourseCard: {
+    borderWidth: 2,
+    borderColor: COLORS.SUCCESS,
+    backgroundColor: '#F0FDF4', // Light green background
+  },
   courseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -347,6 +394,23 @@ const styles = StyleSheet.create({
   },
   enrollButton: {
     alignSelf: 'flex-start',
+  },
+  enrolledButton: {
+    backgroundColor: COLORS.GRAY_LIGHT,
+    borderColor: COLORS.GRAY_LIGHT,
+  },
+  enrolledBadge: {
+    backgroundColor: COLORS.SUCCESS,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  enrolledBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
   },
   emptyCard: {
     alignItems: 'center',

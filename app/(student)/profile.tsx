@@ -410,7 +410,7 @@ export default function ProfileScreen() {
               <Text style={styles.name}>{userProfile.name}</Text>
               <Text style={styles.email}>{userProfile.email}</Text>
               <Text style={styles.phone}>{userProfile.phone}</Text>
-              <Text style={styles.location}>📍 {userProfile.location}</Text>
+              <Text style={styles.location}>{userProfile.location}</Text>
               <Text style={styles.bio}>{userProfile.bio}</Text>
             </View>
           )}
@@ -458,28 +458,28 @@ export default function ProfileScreen() {
         <Card style={styles.actionsCard}>
           <Text style={styles.cardTitle}>Quick Actions</Text>
           <Button
-            title="📜 View Certificates"
+            title="View Certificates"
             onPress={() => console.log('View certificates')}
             variant="secondary"
             size="medium"
             style={styles.quickActionButton}
           />
           <Button
-            title="📊 Learning Analytics"
+            title="Learning Analytics"
             onPress={() => console.log('View analytics')}
             variant="secondary"
             size="medium"
             style={styles.quickActionButton}
           />
           <Button
-            title="⚙️ Account Settings"
+            title="Account Settings"
             onPress={() => console.log('Account settings')}
             variant="secondary"
             size="medium"
             style={styles.quickActionButton}
           />
           <Button
-            title="❓ Help & Support"
+            title="Help & Support"
             onPress={() => console.log('Help & Support')}
             variant="secondary"
             size="medium"
@@ -517,77 +517,94 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.PRIMARY,
   },
   editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 20,
+    borderRadius: 25,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   editButtonText: {
     color: COLORS.WHITE,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   profileCard: {
-    marginBottom: 16,
+    marginBottom: 20,
     alignItems: 'center',
+    borderRadius: 20,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   avatarContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: COLORS.PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.WHITE,
   },
   memberSince: {
-    fontSize: 12,
-    color: COLORS.GRAY_MEDIUM,
+    fontSize: 13,
+    color: COLORS.TEXT_MUTED,
+    fontWeight: '500',
   },
   profileInfo: {
     width: '100%',
     alignItems: 'center',
   },
   name: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
   },
   email: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
     marginBottom: 4,
   },
   phone: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
     marginBottom: 4,
   },
   location: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
-    marginBottom: 12,
+    color: COLORS.TEXT_MUTED,
+    marginBottom: 16,
   },
   bio: {
-    fontSize: 14,
-    color: COLORS.GRAY_DARK,
+    fontSize: 15,
+    color: COLORS.TEXT_PRIMARY,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   editForm: {
     width: '100%',
@@ -604,13 +621,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsCard: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderRadius: 20,
+    backgroundColor: COLORS.PRIMARY_LIGHT,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.GRAY_DARK,
-    marginBottom: 16,
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginBottom: 20,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -620,34 +644,55 @@ const styles = StyleSheet.create({
   statItem: {
     width: '30%',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: COLORS.CARD_BACKGROUND,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   statCategory: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginBottom: 4,
+    marginBottom: 6,
     textAlign: 'center',
   },
   statLabel: {
-    fontSize: 12,
-    color: COLORS.GRAY_MEDIUM,
+    fontSize: 13,
+    color: COLORS.TEXT_MUTED,
     textAlign: 'center',
+    fontWeight: '600',
   },
   actionsCard: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderRadius: 20,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   quickActionButton: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   logoutCard: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderRadius: 20,
+    shadowColor: COLORS.ERROR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   logoutButton: {
     width: '100%',
@@ -655,33 +700,39 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 50,
   },
   loadingText: {
-    fontSize: 14,
-    color: COLORS.GRAY_MEDIUM,
-    marginTop: 12,
+    fontSize: 15,
+    color: COLORS.TEXT_MUTED,
+    marginTop: 16,
+    fontWeight: '500',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 40,
+    borderRadius: 50,
   },
   avatarActions: {
     flexDirection: 'row',
-    marginTop: 8,
-    gap: 8,
+    marginTop: 12,
+    gap: 10,
   },
   avatarActionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: COLORS.SECONDARY,
+    borderRadius: 20,
+    shadowColor: COLORS.SECONDARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   avatarActionText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.WHITE,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   avatarRemoveButton: {
     backgroundColor: COLORS.ERROR,

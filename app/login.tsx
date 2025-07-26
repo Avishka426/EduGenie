@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '@/config/api';
 import { COLORS, USER_ROLES } from '@/constants';
 import { useAuth } from '@/context/AuthContext';
 import ApiService from '@/services/api';
@@ -125,16 +124,8 @@ export default function LoginScreen() {
           <Text style={styles.logo}>🎓</Text>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to continue learning</Text>
+
           
-          {/* Debug Info - Shows which API URL is being used */}
-          <View style={styles.debugInfo}>
-            <Text style={styles.debugText}>
-              🔗 API: {API_BASE_URL}
-            </Text>
-            <Text style={styles.debugPlatform}>
-              📱 Platform: {Platform.OS} {__DEV__ ? '(Dev)' : '(Prod)'}
-            </Text>
-          </View>
         </View>
 
         {/* Form */}
@@ -171,13 +162,7 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Temporary Test Button - REMOVE AFTER TESTING */}
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={testBackendConnection}
-          >
-            <Text style={styles.testButtonText}>🔧 Test Backend Connection</Text>
-          </TouchableOpacity>
+          
 
           {/* Register Link */}
           <View style={styles.footer}>
@@ -229,44 +214,56 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.PRIMARY,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
     textAlign: 'center',
   },
   form: {
     flex: 1,
   },
   input: {
-    height: 50,
+    height: 54,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_MEDIUM,
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    borderColor: COLORS.BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 18,
     fontSize: 16,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: COLORS.CARD_BACKGROUND,
     marginBottom: 15,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   loginButton: {
-    height: 50,
+    height: 54,
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 30,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonDisabled: {
-    backgroundColor: COLORS.GRAY_MEDIUM,
+    backgroundColor: COLORS.DISABLED_BG,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginButtonText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: COLORS.WHITE,
   },
   testButton: {
@@ -290,11 +287,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
   },
   linkText: {
     fontSize: 16,
     color: COLORS.PRIMARY,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

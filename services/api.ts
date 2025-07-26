@@ -343,6 +343,22 @@ class ApiService {
   async getCourse(courseId: string) {
     return this.getCourseDetails(courseId);
   }
+
+  // GPT-3 Course Recommendation methods
+  async getCourseRecommendations(prompt: string) {
+    return this.request('/api/gpt/recommendations', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+  }
+
+  async getPopularCourses() {
+    return this.request('/api/gpt/popular');
+  }
+
+  async getGPTUsage() {
+    return this.request('/api/gpt/usage');
+  }
 }
 
 export default new ApiService();

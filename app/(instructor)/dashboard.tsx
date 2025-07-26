@@ -239,6 +239,13 @@ export default function InstructorDashboard() {
             size="medium"
             style={styles.actionButton}
           />
+          <Button
+            title="🤖 GPT API Usage"
+            onPress={() => router.push('./gpt-usage')}
+            variant="secondary"
+            size="medium"
+            style={styles.actionButton}
+          />
         </Card>
 
         {/* Statistics Overview */}

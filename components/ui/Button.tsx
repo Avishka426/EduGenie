@@ -1,13 +1,13 @@
+import { COLORS } from '@/constants';
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TextStyle,
+    TouchableOpacity,
+    ViewStyle,
 } from 'react-native';
-import { COLORS } from '@/constants';
 
 interface ButtonProps {
   title: string;
@@ -67,14 +67,14 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: COLORS.BLACK,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   
   // Variants
@@ -82,9 +82,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY,
   },
   secondary: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: COLORS.CARD_BACKGROUND,
     borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
+    borderColor: COLORS.BORDER,
   },
   danger: {
     backgroundColor: COLORS.ERROR,
@@ -92,21 +92,23 @@ const styles = StyleSheet.create({
   
   // Sizes
   small: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   medium: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
   },
   large: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingVertical: 18,
+    paddingHorizontal: 36,
   },
   
   // Disabled state
   disabled: {
-    opacity: 0.6,
+    backgroundColor: COLORS.DISABLED_BG,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   
   // Text styles
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
   },
   secondaryText: {
-    color: COLORS.PRIMARY,
+    color: COLORS.TEXT_PRIMARY,
   },
   dangerText: {
     color: COLORS.WHITE,
@@ -136,6 +138,6 @@ const styles = StyleSheet.create({
   },
   
   disabledText: {
-    opacity: 0.6,
+    color: COLORS.DISABLED_TEXT,
   },
 });
