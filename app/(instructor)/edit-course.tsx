@@ -258,7 +258,7 @@ export default function EditCourseScreen() {
         level,
         content: content.trim(),
         duration: Number(duration),
-        status: status.toLowerCase(), // Ensure consistent format for API
+        status: status, // Keep original case - backend expects "Published", not "published"
       };
       
       console.log('📝 Course data to update:', courseData);

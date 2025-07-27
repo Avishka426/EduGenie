@@ -5,14 +5,14 @@ import ApiService from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface Course {
@@ -287,11 +287,11 @@ export default function InstructorCoursesScreen() {
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
-    case 'published':
+    case 'Published':
       return { color: COLORS.SUCCESS };
-    case 'draft':
+    case 'Draft':
       return { color: COLORS.WARNING };
-    case 'archived':
+    case 'Archived':
       return { color: COLORS.GRAY_MEDIUM };
     default:
       return { color: COLORS.GRAY_DARK };

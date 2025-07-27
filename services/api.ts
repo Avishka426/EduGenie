@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
+import { API_ENDPOINTS, FINAL_API_BASE_URL } from '@/config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ApiResponse<T = any> {
@@ -12,7 +12,8 @@ class ApiService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = FINAL_API_BASE_URL;
+    console.log('🌐 API Service initialized with base URL:', this.baseURL);
   }
 
   // Generic request method
@@ -34,25 +35,39 @@ class ApiService {
         ...options,
       };
 
-      console.log('🔄 API Request:', url, { method: config.method, hasToken: !!token });
+      console.log('🔄 API Request:', url, { 
+        method: config.method, 
+        hasToken: !!token,
+        body: config.body 
+      });
 
       const response = await fetch(url, config);
-      const data = await response.json();
-
-      console.log('📡 API Response:', response.status, data);
-
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', response.status, errorText);
+        
         // Handle authentication errors
         if (response.status === 401) {
           await AsyncStorage.removeItem('authToken');
           await AsyncStorage.removeItem('user');
         }
 
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+
         return {
           success: false,
-          error: data.message || data.error || `HTTP ${response.status}`,
+          error: errorData.message || errorData.error || `HTTP ${response.status}`,
         };
       }
+
+      const data = await response.json();
+      console.log('📡 API Response:', response.status, data);
 
       return {
         success: true,
@@ -76,6 +91,54 @@ class ApiService {
       return {
         success: false,
         error: errorMessage,
+      };
+    }
+  }
+
+  // Connection test method
+  async testConnection(): Promise<{
+    success: boolean;
+    url: string;
+    error?: string;
+    details?: any;
+  }> {
+    const testUrl = `${this.baseURL}/api/health`;
+    
+    try {
+      console.log('🧪 Testing connection to:', testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+
+      const isSuccess = response.ok;
+      const data = await response.text();
+
+      return {
+        success: isSuccess,
+        url: testUrl,
+        details: {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+        }
+      };
+    } catch (error) {
+      console.error('🧪 Connection test failed:', error);
+      
+      return {
+        success: false,
+        url: testUrl,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: {
+          errorType: error?.constructor?.name,
+          message: error instanceof Error ? error.message : String(error),
+        }
       };
     }
   }
@@ -353,7 +416,49 @@ class ApiService {
   }
 
   async getPopularCourses() {
-    return this.request('/api/gpt/popular');
+    // Fallback to regular courses endpoint until GPT popular endpoint is implemented
+    try {
+      const response = await this.request('/api/gpt/popular');
+      return response;
+    } catch {
+      // Fallback to regular courses and format as popular courses
+      console.log('GPT popular endpoint not available, using regular courses');
+      const coursesResponse = await this.request('/courses');
+      
+      if (coursesResponse.success && coursesResponse.data && coursesResponse.data.courses) {
+        // Transform regular courses to popular courses format
+        const popularCourses = coursesResponse.data.courses
+          .sort((a: any, b: any) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0))
+          .slice(0, 6) // Get top 6 most enrolled courses
+          .map((course: any) => ({
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            category: course.category,
+            level: course.level,
+            instructorName: course.instructorName,
+            duration: course.duration,
+            price: course.price,
+            enrollmentCount: course.enrollmentCount || 0,
+            popularity: course.enrollmentCount > 2 ? "Most Enrolled" : 
+                       course.enrollmentCount > 1 ? "Popular" : "New"
+          }));
+
+        return {
+          success: true,
+          data: {
+            message: "Popular courses retrieved successfully",
+            courses: popularCourses,
+            metadata: {
+              totalCourses: popularCourses.length,
+              sortedBy: "enrollment_count"
+            }
+          }
+        };
+      }
+      
+      return coursesResponse;
+    }
   }
 
   async getGPTUsage() {

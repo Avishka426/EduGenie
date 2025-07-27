@@ -1,7 +1,8 @@
 import { COLORS } from '@/constants';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, Text } from 'react-native';
+import { Platform } from 'react-native';
 
 export default function StudentTabLayout() {
   return (
@@ -21,8 +22,12 @@ export default function StudentTabLayout() {
         name="dashboard"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <HomeIcon color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name="home" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -30,8 +35,12 @@ export default function StudentTabLayout() {
         name="courses"
         options={{
           title: 'Browse',
-          tabBarIcon: ({ color }) => (
-            <BookIcon color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name="library" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -39,8 +48,12 @@ export default function StudentTabLayout() {
         name="browse"
         options={{
           title: 'All Courses',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 24 }}>🔍</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name="search" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -48,8 +61,12 @@ export default function StudentTabLayout() {
         name="enrolled"
         options={{
           title: 'My Courses',
-          tabBarIcon: ({ color }) => (
-            <UserIcon color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name="bookmarks" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -57,8 +74,12 @@ export default function StudentTabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <ProfileIcon color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name="person" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -70,21 +91,4 @@ export default function StudentTabLayout() {
             />
     </Tabs>
   );
-}
-
-// Simple icon components (you can replace with actual icons later)
-function HomeIcon({ color }: { color: string }) {
-  return <Text style={{ color, fontSize: 24 }}>🏠</Text>;
-}
-
-function BookIcon({ color }: { color: string }) {
-  return <Text style={{ color, fontSize: 24 }}>📚</Text>;
-}
-
-function UserIcon({ color }: { color: string }) {
-  return <Text style={{ color, fontSize: 24 }}>👤</Text>;
-}
-
-function ProfileIcon({ color }: { color: string }) {
-  return <Text style={{ color, fontSize: 24 }}>⚙️</Text>;
 }

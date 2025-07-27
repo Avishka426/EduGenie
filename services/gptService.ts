@@ -74,12 +74,30 @@ class GPTService {
         };
       }
 
+      console.log('🔧 GPTService: Making API call with prompt:', prompt.trim());
       const response = await ApiService.getCourseRecommendations(prompt.trim());
+      console.log('🔧 GPTService: API response received:', response);
 
-      if (response.success) {
+      if (response.success && response.data) {
+        // Handle the nested data structure from backend
+        const backendData = response.data.data || response.data;
+        
+        console.log('🔧 GPTService: Processing backend data:', backendData);
+        
         return {
           success: true,
-          data: response.data
+          data: {
+            message: backendData.message || 'AI recommendations generated successfully',
+            prompt: backendData.prompt || prompt.trim(),
+            recommendations: backendData.recommendations || [],
+            aiResponse: backendData.aiResponse || '',
+            metadata: backendData.metadata || {
+              totalAvailableCourses: 0,
+              recommendationsCount: 0,
+              apiCallsUsed: 0,
+              remainingApiCalls: 250
+            }
+          }
         };
       } else {
         return {
@@ -88,7 +106,7 @@ class GPTService {
         };
       }
     } catch (error) {
-      console.error('Error getting course recommendations:', error);
+      console.error('🔧 GPTService: Error getting course recommendations:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Network error occurred'

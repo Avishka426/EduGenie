@@ -3,21 +3,18 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import { COLORS } from '@/constants';
 import GPTService, { CourseRecommendation } from '@/services/gptService';
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-
 export default function AIRecommendationsScreen() {
-  const router = useRouter();
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<CourseRecommendation[]>([]);
@@ -29,7 +26,7 @@ export default function AIRecommendationsScreen() {
   } | null>(null);
   const [showSamples, setShowSamples] = useState(true);
 
-  const samplePrompts = GPTService.getSamplePrompts();
+  const samplePrompts = GPTService.getSamplePrompts() || [];
 
   const handleGetRecommendations = async () => {
     const validation = GPTService.validatePrompt(prompt);
@@ -42,29 +39,56 @@ export default function AIRecommendationsScreen() {
     setShowSamples(false);
 
     try {
+      console.log('🚀 Getting AI recommendations for prompt:', prompt);
       const response = await GPTService.getCourseRecommendations(prompt);
+      console.log('📊 GPT Service Response:', response);
 
       if (response.success && response.data) {
-        setRecommendations(response.data.recommendations);
-        setAiResponse(response.data.aiResponse);
+        console.log('✅ Setting recommendations:', response.data.recommendations);
+        console.log('📝 AI Response:', response.data.aiResponse);
+        console.log('📊 Metadata:', response.data.metadata);
+        
+        const recommendations = response.data.recommendations || [];
+        const aiResponse = response.data.aiResponse || '';
+        
+        console.log('🔢 Recommendations count:', recommendations.length);
+        console.log('📋 Recommendations array:', recommendations);
+        
+        setRecommendations(recommendations);
+        setAiResponse(aiResponse);
         setApiUsage({
-          callsUsed: response.data.metadata.apiCallsUsed,
-          remainingCalls: response.data.metadata.remainingApiCalls,
+          callsUsed: response.data.metadata?.apiCallsUsed || 0,
+          remainingCalls: response.data.metadata?.remainingApiCalls || 250,
           maxCalls: 250
         });
+        
+        // Force show results if we have recommendations
+        if (recommendations.length > 0) {
+          setShowSamples(false);
+          console.log('🎯 Successfully set', recommendations.length, 'recommendations');
+        }
       } else {
-        // Fallback to popular courses
+        console.log('❌ GPT Service failed:', response.error);
+        // Show error message for failed AI recommendations
         Alert.alert(
-          'AI Unavailable',
-          'AI recommendations are temporarily unavailable. Showing popular courses instead.',
+          'AI Service Unavailable',
+          'AI recommendations are currently unavailable. The GPT integration is being set up. Would you like to see popular courses instead?',
           [
-            { text: 'OK', onPress: handleGetPopularCourses }
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Show Popular Courses', onPress: handleGetPopularCourses }
           ]
         );
       }
     } catch (error) {
-      console.error('Error getting recommendations:', error);
-      Alert.alert('Error', 'Failed to get recommendations. Please try again.');
+      console.error('💥 Error getting recommendations:', error);
+      Alert.alert(
+        'Connection Error', 
+        'Unable to connect to AI service. Would you like to see popular courses from our catalog instead?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Show Popular Courses', onPress: handleGetPopularCourses }
+        ]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +102,7 @@ export default function AIRecommendationsScreen() {
 
       if (response.success && response.data) {
         // Convert popular courses to recommendation format
-        const popularAsRecommendations: CourseRecommendation[] = response.data.courses.map(course => ({
+        const popularAsRecommendations: CourseRecommendation[] = (response.data.courses || []).map(course => ({
           id: course.id,
           title: course.title,
           description: course.description,
@@ -87,7 +111,7 @@ export default function AIRecommendationsScreen() {
           instructorName: course.instructorName,
           duration: course.duration,
           price: course.price,
-          recommendationReason: `Popular course with ${course.enrollmentCount} enrollments`
+          recommendationReason: `Popular course with ${course.enrollmentCount || 0} enrollments`
         }));
 
         setRecommendations(popularAsRecommendations);
@@ -113,6 +137,111 @@ export default function AIRecommendationsScreen() {
     setAiResponse('');
     setPrompt('');
     setShowSamples(true);
+  };
+
+  // Debug function to test API directly
+  const handleTestApiDirect = async () => {
+    try {
+      console.log('🧪 Testing API directly...');
+      
+      // First test basic connection
+      const connectionTest = await fetch('http://localhost:3000/api/health', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('🧪 Connection test result:', connectionTest.status);
+      
+      if (!connectionTest.ok) {
+        Alert.alert(
+          'Connection Failed',
+          `Cannot connect to backend server.\n\nStatus: ${connectionTest.status}\nURL: http://localhost:3000\n\nMake sure your backend server is running!`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      // Now test the GPT endpoint
+      const response = await fetch('http://localhost:3000/api/gpt/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: 'I want to learn web development from scratch' }),
+      });
+      
+      const data = await response.json();
+      console.log('🧪 Direct API test result:', data);
+      
+      Alert.alert(
+        'API Test Result',
+        `✅ Connection: Success\n📊 Status: ${response.status}\n🎯 Success: ${data.success}\n📚 Recommendations: ${data.data?.recommendations?.length || 0}`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('🧪 Direct API test error:', error);
+      
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.message.includes('Network request failed')) {
+          errorMessage = 'Network request failed - Backend server is not running or not accessible';
+        } else if (error.message.includes('fetch')) {
+          errorMessage = 'Fetch failed - Check if the backend URL is correct';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      Alert.alert(
+        'Connection Test Failed',
+        `❌ Cannot connect to backend server\n\n🔗 URL: http://localhost:3000\n❌ Error: ${errorMessage}\n\n💡 Solutions:\n1. Make sure backend is running\n2. Check if port 3000 is available\n3. Try restarting your backend server`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Debug function to test UI rendering with mock data
+  const handleTestUIRender = () => {
+    console.log('🎨 Testing UI render with mock data...');
+    
+    const mockRecommendations: CourseRecommendation[] = [
+      {
+        id: "test-1",
+        title: "Test Course 1",
+        description: "This is a test course description",
+        category: "Programming",
+        level: "Beginner",
+        instructorName: "Test Instructor",
+        duration: 10,
+        price: 29,
+        recommendationReason: "Test recommendation reason"
+      },
+      {
+        id: "test-2", 
+        title: "Test Course 2",
+        description: "Another test course description",
+        category: "Web Development",
+        level: "Intermediate",
+        instructorName: "Another Instructor",
+        duration: 15,
+        price: 49,
+        recommendationReason: "Another test recommendation"
+      }
+    ];
+    
+    setRecommendations(mockRecommendations);
+    setAiResponse('Test AI response for UI rendering');
+    setShowSamples(false);
+    setApiUsage({
+      callsUsed: 1,
+      remainingCalls: 249,
+      maxCalls: 250
+    });
+    
+    console.log('🎨 Mock data set successfully');
+    Alert.alert('UI Test', 'Mock recommendations have been set. Check if they render correctly.');
   };
 
   return (
@@ -164,7 +293,25 @@ export default function AIRecommendationsScreen() {
               style={styles.recommendButton}
             />
             
-            {recommendations.length > 0 && (
+            {/* Debug button - remove this in production */}
+            <Button
+              title="Test API"
+              onPress={handleTestApiDirect}
+              variant="secondary"
+              size="small"
+              style={styles.testButton}
+            />
+            
+            {/* UI Debug button - remove this in production */}
+            <Button
+              title="Test UI"
+              onPress={handleTestUIRender}
+              variant="secondary"
+              size="small"
+              style={styles.testButton}
+            />
+            
+            {recommendations && recommendations.length > 0 && (
               <Button
                 title="Clear Results"
                 onPress={handleClearResults}
@@ -181,7 +328,7 @@ export default function AIRecommendationsScreen() {
         </Card>
 
         {/* Sample Prompts */}
-        {showSamples && (
+        {showSamples && samplePrompts.length > 0 && (
           <Card style={styles.samplesCard}>
             <Text style={styles.cardTitle}>💡 Try these sample prompts</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -219,85 +366,117 @@ export default function AIRecommendationsScreen() {
         )}
 
         {/* Course Recommendations */}
-        {recommendations.length > 0 && !isLoading && (
-          <View style={styles.recommendationsContainer}>
-            <Text style={styles.recommendationsTitle}>
-              📚 Recommended Courses ({recommendations.length})
-            </Text>
-            
-            {recommendations.map((course) => (
-              <Card key={course.id} style={styles.courseCard}>
-                <View style={styles.courseHeader}>
-                  <Text style={styles.courseTitle}>{course.title}</Text>
-                  <View style={styles.priceContainer}>
-                    <Text style={styles.priceText}>${course.price}</Text>
-                  </View>
-                </View>
+        {(() => {
+          console.log('🔍 Render check - recommendations:', recommendations);
+          console.log('🔍 Render check - recommendations length:', recommendations?.length);
+          console.log('🔍 Render check - isLoading:', isLoading);
+          console.log('🔍 Render check - showSamples:', showSamples);
+          
+          return recommendations && recommendations.length > 0 && !isLoading ? (
+            <View style={styles.recommendationsContainer}>
+              <Text style={styles.recommendationsTitle}>
+                📚 Recommended Courses ({recommendations.length})
+              </Text>
+              
+              {recommendations.map((course, index) => {
+                console.log(`🎯 Rendering course ${index + 1}:`, course.title);
+                return (
+                  <Card key={course.id || index} style={styles.courseCard}>
+                    <View style={styles.courseHeader}>
+                      <Text style={styles.courseTitle}>{course.title}</Text>
+                      <View style={styles.priceContainer}>
+                        <Text style={styles.priceText}>${course.price}</Text>
+                      </View>
+                    </View>
 
-                <Text style={styles.instructorText}>by {course.instructorName}</Text>
-                
-                <View style={styles.courseMetadata}>
-                  <View style={styles.metadataItem}>
-                    <Text style={styles.metadataLabel}>Category:</Text>
-                    <Text style={styles.metadataValue}>{course.category}</Text>
-                  </View>
-                  <View style={styles.metadataItem}>
-                    <Text style={styles.metadataLabel}>Level:</Text>
-                    <Text style={styles.metadataValue}>{course.level}</Text>
-                  </View>
-                  <View style={styles.metadataItem}>
-                    <Text style={styles.metadataLabel}>Duration:</Text>
-                    <Text style={styles.metadataValue}>{course.duration} hours</Text>
-                  </View>
-                </View>
+                    <Text style={styles.instructorText}>by {course.instructorName}</Text>
+                    
+                    <View style={styles.courseMetadata}>
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Category:</Text>
+                        <Text style={styles.metadataValue}>{course.category}</Text>
+                      </View>
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Level:</Text>
+                        <Text style={styles.metadataValue}>{course.level}</Text>
+                      </View>
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Duration:</Text>
+                        <Text style={styles.metadataValue}>{course.duration} hours</Text>
+                      </View>
+                    </View>
 
-                <Text style={styles.courseDescription}>{course.description}</Text>
+                    <Text style={styles.courseDescription}>{course.description}</Text>
 
-                <View style={styles.recommendationReason}>
-                  <Text style={styles.reasonLabel}>💡 Why recommended:</Text>
-                  <Text style={styles.reasonText}>{course.recommendationReason}</Text>
-                </View>
+                    <View style={styles.recommendationReason}>
+                      <Text style={styles.reasonLabel}>💡 Why recommended:</Text>
+                      <Text style={styles.reasonText}>{course.recommendationReason}</Text>
+                    </View>
 
-                <View style={styles.courseActions}>
-                  <Button
-                    title="View Details"
-                    onPress={() => router.push(`./course-details?id=${course.id}`)}
-                    variant="secondary"
-                    size="small"
-                    style={styles.detailsButton}
-                  />
-                  <Button
-                    title="Enroll Now"
-                    onPress={() => {
-                      Alert.alert(
-                        'Enroll in Course',
-                        `Would you like to enroll in "${course.title}"?`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Enroll', onPress: () => console.log('Enrolling...') }
-                        ]
-                      );
-                    }}
-                    size="small"
-                    style={styles.enrollButton}
-                  />
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
+                    <View style={styles.courseActions}>
+                      <Button
+                        title="View Details"
+                        onPress={() => {
+                          // Navigate to course details (you may need to implement this route)
+                          Alert.alert(
+                            'Course Details',
+                            `Viewing details for "${course.title}"\n\n${course.description}`,
+                            [{ text: 'OK' }]
+                          );
+                        }}
+                        variant="secondary"
+                        size="small"
+                        style={styles.detailsButton}
+                      />
+                      <Button
+                        title="Enroll Now"
+                        onPress={() => {
+                          Alert.alert(
+                            'Enroll in Course',
+                            `Would you like to enroll in "${course.title}"?\n\nPrice: $${course.price}\nDuration: ${course.duration} hours`,
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              { 
+                                text: 'Enroll', 
+                                onPress: () => {
+                                  Alert.alert('Success!', 'You have been enrolled in the course.');
+                                }
+                              }
+                            ]
+                          );
+                        }}
+                        size="small"
+                        style={styles.enrollButton}
+                      />
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
+          ) : null;
+        })()}
 
         {/* Empty State */}
-        {!isLoading && !recommendations.length && !showSamples && (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              🔍 No recommendations yet
-            </Text>
-            <Text style={styles.emptySubtext}>
-              Describe your learning goals above to get personalized course recommendations
-            </Text>
-          </Card>
-        )}
+        {(() => {
+          const shouldShowEmpty = !isLoading && (!recommendations || recommendations.length === 0) && !showSamples;
+          console.log('🔍 Empty state check:', {
+            isLoading,
+            recommendationsLength: recommendations?.length || 0,
+            showSamples,
+            shouldShowEmpty
+          });
+          
+          return shouldShowEmpty ? (
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyText}>
+                🔍 No recommendations yet
+              </Text>
+              <Text style={styles.emptySubtext}>
+                Describe your learning goals above to get personalized course recommendations
+              </Text>
+            </Card>
+          ) : null;
+        })()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -368,9 +547,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginBottom: 8,
+    flexWrap: 'wrap',
   },
   recommendButton: {
     flex: 2,
+  },
+  testButton: {
+    minWidth: 80,
   },
   clearButton: {
     flex: 1,

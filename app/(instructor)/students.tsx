@@ -257,7 +257,7 @@ export default function StudentsScreen() {
               </Text>
               {selectedCourse.students.length > 0 && (
                 <Text style={styles.dataInfo}>
-                  📊 Showing real enrollment data from backend
+                  enrollment data
                 </Text>
               )}
             </View>
@@ -356,26 +356,21 @@ export default function StudentsScreen() {
             <Text style={styles.cardTitle}>Quick Actions</Text>
             <View style={styles.actionsGrid}>
               <Button
-                title="📧 Message All Students"
+                title=" Message All Students"
                 onPress={() => Alert.alert('Feature Coming Soon', 'Student messaging feature will be available in a future update.')}
                 variant="secondary"
                 size="medium"
                 style={styles.actionButton}
               />
               <Button
-                title="📊 Export Student Data"
+                title="Export Student Data"
                 onPress={() => Alert.alert('Feature Coming Soon', 'Data export feature will be available in a future update.')}
                 variant="secondary"
                 size="medium"
                 style={styles.actionButton}
               />
             </View>
-            <Button
-              title="🔄 Refresh Students"
-              onPress={() => loadCourseStudents(selectedCourse)}
-              size="medium"
-              style={styles.fullWidthButton}
-            />
+            
           </Card>
         )}
       </ScrollView>

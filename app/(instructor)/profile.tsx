@@ -7,14 +7,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function InstructorProfile() {
@@ -302,7 +302,7 @@ export default function InstructorProfile() {
             </View>
           </View>
           <Button
-            title="✏️ Edit Profile"
+            title="Edit Profile"
             onPress={handleEditProfile}
             variant="secondary"
             size="medium"
@@ -411,7 +411,7 @@ export default function InstructorProfile() {
         {/* Logout Button */}
         <Card style={styles.card}>
           <Button
-            title="🚪 Logout"
+            title=" Logout"
             onPress={handleLogout}
             variant="secondary"
             size="large"

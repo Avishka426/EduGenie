@@ -10,6 +10,12 @@ const BACKEND_PORT = '3000';
 
 // Auto-detect the best API URL
 const getApiBaseUrl = (): string => {
+  console.log('🔍 Platform detection:', {
+    OS: Platform.OS,
+    appOwnership: Constants.appOwnership,
+    isDev: __DEV__
+  });
+
   // For development, you can manually override here:
   // return 'http://192.168.43.66:3000'; // Force mobile IP
   // return 'http://localhost:3000'; // Force localhost
@@ -18,18 +24,22 @@ const getApiBaseUrl = (): string => {
     // Check if running in Expo Go (mobile device)
     if (Constants.appOwnership === 'expo') {
       // Running on physical device via Expo Go
+      console.log('📱 Using mobile IP for Expo Go');
       return `http://${COMPUTER_WIFI_IP}:${BACKEND_PORT}`;
     }
     
     // Check platform for simulators/emulators
     if (Platform.OS === 'android') {
       // Android Emulator
+      console.log('🤖 Using Android Emulator IP');
       return `http://10.0.2.2:${BACKEND_PORT}`;
     } else if (Platform.OS === 'ios') {
-      // iOS Simulator
+      // iOS Simulator  
+      console.log('🍎 Using iOS Simulator localhost');
       return `http://localhost:${BACKEND_PORT}`;
     } else if (Platform.OS === 'web') {
       // Web browser
+      console.log('🌐 Using web browser localhost');
       return `http://localhost:${BACKEND_PORT}`;
     }
   }
@@ -40,10 +50,42 @@ const getApiBaseUrl = (): string => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-// Manual override options (uncomment to force specific URL):
-// export const API_BASE_URL = 'http://localhost:3000'; // For web/simulator
-// export const API_BASE_URL = 'http://192.168.43.66:3000'; // For mobile device
-// export const API_BASE_URL = 'http://10.0.2.2:3000'; // For Android emulator
+// Manual override options - Try different URLs if having connection issues:
+// Uncomment ONE of these lines based on your platform:
+// export const API_BASE_URL_OVERRIDE = 'http://localhost:3000'; // For web/simulator
+// export const API_BASE_URL_OVERRIDE = 'http://192.168.43.66:3000'; // For mobile device (Expo Go)
+// export const API_BASE_URL_OVERRIDE = 'http://10.0.2.2:3000'; // For Android emulator
+// export const API_BASE_URL_OVERRIDE = 'http://127.0.0.1:3000'; // Alternative localhost
+
+// Dynamic override - automatically uses the right URL for each platform
+export const API_BASE_URL_OVERRIDE = (() => {
+  if (__DEV__) {
+    // Check if running in Expo Go (mobile device)
+    if (Constants.appOwnership === 'expo') {
+      console.log('📱 Override: Using mobile IP for Expo Go');
+      return `http://${COMPUTER_WIFI_IP}:${BACKEND_PORT}`;
+    }
+    
+    // Check platform for simulators/emulators/web
+    if (Platform.OS === 'android') {
+      console.log('🤖 Override: Using Android Emulator IP');
+      return `http://10.0.2.2:${BACKEND_PORT}`;
+    } else if (Platform.OS === 'web') {
+      console.log('🌐 Override: Using web localhost');
+      return `http://localhost:${BACKEND_PORT}`;
+    } else {
+      console.log('🍎 Override: Using iOS/default localhost');
+      return `http://localhost:${BACKEND_PORT}`;
+    }
+  }
+  
+  return null; // No override in production
+})();
+
+// Use the override for debugging
+export const FINAL_API_BASE_URL = API_BASE_URL_OVERRIDE || API_BASE_URL;
+
+console.log('🌐 Final API Base URL:', FINAL_API_BASE_URL);
 
 export const API_ENDPOINTS = {
   // Authentication endpoints
