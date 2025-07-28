@@ -9,6 +9,7 @@ export default function InstructorTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: COLORS.PRIMARY,
         tabBarInactiveTintColor: COLORS.GRAY_MEDIUM,
+        headerShown: false, // Remove the default header
         headerStyle: {
           backgroundColor: COLORS.WHITE,
         },

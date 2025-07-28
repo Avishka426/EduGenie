@@ -192,12 +192,12 @@ export default function InstructorCoursesScreen() {
             style={styles.createButton}
           />
           <Button
-            title="🔄 Refresh"
+            title="Refresh"
             onPress={() => {
               loadCourses();
             }}
             variant="secondary"
-            size="medium"
+            size="small"
             style={styles.refreshButton}
           />
         </View>
@@ -287,11 +287,11 @@ export default function InstructorCoursesScreen() {
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
-    case 'Published':
-      return { color: COLORS.SUCCESS };
-    case 'Draft':
+    case 'published':
+      return { color: '#28a745' }; // Green color for published
+    case 'draft':
       return { color: COLORS.WARNING };
-    case 'Archived':
+    case 'archived':
       return { color: COLORS.GRAY_MEDIUM };
     default:
       return { color: COLORS.GRAY_DARK };
@@ -383,6 +383,15 @@ const styles = StyleSheet.create({
   },
   courseCard: {
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 12,
+    borderRadius: 12,
   },
   courseHeader: {
     flexDirection: 'row',

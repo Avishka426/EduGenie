@@ -10,42 +10,48 @@ const BACKEND_PORT = '3000';
 
 // Auto-detect the best API URL
 const getApiBaseUrl = (): string => {
-  console.log('🔍 Platform detection:', {
-    OS: Platform.OS,
-    appOwnership: Constants.appOwnership,
-    isDev: __DEV__
-  });
+  try {
+    console.log('🔍 Platform detection:', {
+      OS: Platform.OS,
+      appOwnership: Constants.appOwnership,
+      isDev: __DEV__
+    });
 
-  // For development, you can manually override here:
-  // return 'http://192.168.43.66:3000'; // Force mobile IP
-  // return 'http://localhost:3000'; // Force localhost
-  
-  if (__DEV__) {
-    // Check if running in Expo Go (mobile device)
-    if (Constants.appOwnership === 'expo') {
-      // Running on physical device via Expo Go
-      console.log('📱 Using mobile IP for Expo Go');
-      return `http://${COMPUTER_WIFI_IP}:${BACKEND_PORT}`;
+    // For development, you can manually override here:
+    // return 'http://192.168.43.66:3000'; // Force mobile IP
+    // return 'http://localhost:3000'; // Force localhost
+    
+    if (__DEV__) {
+      // Check if running in Expo Go (mobile device)
+      if (Constants.appOwnership === 'expo') {
+        // Running on physical device via Expo Go
+        console.log('📱 Using mobile IP for Expo Go');
+        return `http://${COMPUTER_WIFI_IP}:${BACKEND_PORT}`;
+      }
+      
+      // Check platform for simulators/emulators
+      if (Platform.OS === 'android') {
+        // Android Emulator
+        console.log('🤖 Using Android Emulator IP');
+        return `http://10.0.2.2:${BACKEND_PORT}`;
+      } else if (Platform.OS === 'ios') {
+        // iOS Simulator  
+        console.log('🍎 Using iOS Simulator localhost');
+        return `http://localhost:${BACKEND_PORT}`;
+      } else if (Platform.OS === 'web') {
+        // Web browser
+        console.log('🌐 Using web browser localhost');
+        return `http://localhost:${BACKEND_PORT}`;
+      }
     }
     
-    // Check platform for simulators/emulators
-    if (Platform.OS === 'android') {
-      // Android Emulator
-      console.log('🤖 Using Android Emulator IP');
-      return `http://10.0.2.2:${BACKEND_PORT}`;
-    } else if (Platform.OS === 'ios') {
-      // iOS Simulator  
-      console.log('🍎 Using iOS Simulator localhost');
-      return `http://localhost:${BACKEND_PORT}`;
-    } else if (Platform.OS === 'web') {
-      // Web browser
-      console.log('🌐 Using web browser localhost');
-      return `http://localhost:${BACKEND_PORT}`;
-    }
+    // Production fallback
+    return 'https://your-backend-domain.com';
+  } catch (error) {
+    console.error('❌ Platform detection failed:', error);
+    // Fallback to localhost if platform detection fails
+    return `http://localhost:${BACKEND_PORT}`;
   }
-  
-  // Production fallback
-  return 'https://your-backend-domain.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -57,30 +63,17 @@ export const API_BASE_URL = getApiBaseUrl();
 // export const API_BASE_URL_OVERRIDE = 'http://10.0.2.2:3000'; // For Android emulator
 // export const API_BASE_URL_OVERRIDE = 'http://127.0.0.1:3000'; // Alternative localhost
 
-// Dynamic override - automatically uses the right URL for each platform
-export const API_BASE_URL_OVERRIDE = (() => {
-  if (__DEV__) {
-    // Check if running in Expo Go (mobile device)
-    if (Constants.appOwnership === 'expo') {
-      console.log('📱 Override: Using mobile IP for Expo Go');
-      return `http://${COMPUTER_WIFI_IP}:${BACKEND_PORT}`;
-    }
-    
-    // Check platform for simulators/emulators/web
-    if (Platform.OS === 'android') {
-      console.log('🤖 Override: Using Android Emulator IP');
-      return `http://10.0.2.2:${BACKEND_PORT}`;
-    } else if (Platform.OS === 'web') {
-      console.log('🌐 Override: Using web localhost');
-      return `http://localhost:${BACKEND_PORT}`;
-    } else {
-      console.log('🍎 Override: Using iOS/default localhost');
-      return `http://localhost:${BACKEND_PORT}`;
-    }
-  }
-  
-  return null; // No override in production
-})();
+// Simplified override - choose based on your current platform
+// IMPORTANT: Uncomment ONLY ONE line based on where you're running the app
+
+// For Expo Go (mobile device), uncomment this line:
+export const API_BASE_URL_OVERRIDE = 'http://192.168.43.66:3000';
+
+// For web browser, uncomment this line:
+// export const API_BASE_URL_OVERRIDE = 'http://localhost:3000';
+
+// For Android emulator, uncomment this line:
+// export const API_BASE_URL_OVERRIDE = 'http://10.0.2.2:3000';
 
 // Use the override for debugging
 export const FINAL_API_BASE_URL = API_BASE_URL_OVERRIDE || API_BASE_URL;

@@ -104,12 +104,7 @@ export default function StudentDashboard() {
               </Text>
               <Text style={styles.subtitle}>Ready to continue learning?</Text>
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
 
@@ -132,7 +127,7 @@ export default function StudentDashboard() {
             />
           </View>
           <Button
-            title="🤖 Get AI Recommendations"
+            title="Get AI Recommendations"
             onPress={() => router.push('./ai-recommendations')}
             variant="secondary"
             size="medium"

@@ -338,13 +338,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               )}
               
-              {/* Debug button - remove this in production */}
-              <TouchableOpacity 
-                onPress={() => Alert.alert('Debug Info', `Profile Picture URL: ${profilePicture || 'No image set'}`)}
-                style={[styles.avatarActionButton, { backgroundColor: COLORS.WARNING }]}
-              >
-                <Text style={styles.avatarActionText}>Debug</Text>
-              </TouchableOpacity>
+              
             </View>
 
             <Text style={styles.memberSince}>

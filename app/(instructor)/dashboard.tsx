@@ -232,15 +232,9 @@ export default function InstructorDashboard() {
               style={styles.actionButton}
             />
           </View>
+          
           <Button
-            title="📊 Analytics Dashboard"
-            onPress={() => console.log('Analytics coming soon!')}
-            variant="secondary"
-            size="medium"
-            style={styles.actionButton}
-          />
-          <Button
-            title="🤖 GPT API Usage"
+            title=" GPT API Usage"
             onPress={() => router.push('./gpt-usage')}
             variant="secondary"
             size="medium"

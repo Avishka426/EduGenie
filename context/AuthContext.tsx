@@ -31,24 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if user is already logged in on app start
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const isAuth = await ApiService.isAuthenticated();
-        if (isAuth) {
-          const currentUser = await ApiService.getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-            console.log('✅ User restored from storage:', currentUser.email);
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    // TEMPORARY: Disable API calls during startup to fix Expo Go
+    console.log('⚠️ Auth initialization temporarily disabled for debugging');
+    
+    // Just set loading to false without any network calls
+    setTimeout(() => {
+      setIsLoading(false);
+      console.log('✅ Auth context ready (offline mode)');
+    }, 100);
   }, []);
 
   const login = async (email: string, password: string) => {
