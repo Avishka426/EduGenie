@@ -12,8 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 interface InstructorStats {
@@ -211,12 +210,7 @@ export default function InstructorDashboard() {
                 <Text style={styles.errorText}>⚠️ {error}</Text>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
 
@@ -238,9 +232,10 @@ export default function InstructorDashboard() {
               style={styles.actionButton}
             />
           </View>
+          
           <Button
-            title="📊 Analytics Dashboard"
-            onPress={() => console.log('Analytics coming soon!')}
+            title=" GPT API Usage"
+            onPress={() => router.push('./gpt-usage')}
             variant="secondary"
             size="medium"
             style={styles.actionButton}

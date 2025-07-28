@@ -104,12 +104,7 @@ export default function StudentDashboard() {
               </Text>
               <Text style={styles.subtitle}>Ready to continue learning?</Text>
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
 
@@ -132,10 +127,8 @@ export default function StudentDashboard() {
             />
           </View>
           <Button
-            title="🤖 Get AI Recommendations"
-            onPress={() => {
-              Alert.alert('Coming Soon', 'AI course recommendations feature is coming soon!');
-            }}
+            title="Get AI Recommendations"
+            onPress={() => router.push('./ai-recommendations')}
             variant="secondary"
             size="medium"
             style={{...styles.actionButton, backgroundColor: COLORS.SUCCESS}}
@@ -268,23 +261,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.PRIMARY,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_MUTED,
   },
   card: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    backgroundColor: COLORS.CARD_BACKGROUND,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.GRAY_DARK,
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginBottom: 20,
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -297,19 +297,22 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    backgroundColor: COLORS.PRIMARY_LIGHT,
+    padding: 16,
+    borderRadius: 12,
   },
   statItem: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: COLORS.GRAY_MEDIUM,
+    color: COLORS.TEXT_PRIMARY,
     textAlign: 'center',
   },
   emptyText: {

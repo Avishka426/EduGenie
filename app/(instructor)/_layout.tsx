@@ -1,7 +1,7 @@
+import { COLORS } from '@/constants';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Text } from 'react-native';
-import { COLORS } from '@/constants';
 
 export default function InstructorTabLayout() {
   return (
@@ -9,6 +9,7 @@ export default function InstructorTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: COLORS.PRIMARY,
         tabBarInactiveTintColor: COLORS.GRAY_MEDIUM,
+        headerShown: false, // Remove the default header
         headerStyle: {
           backgroundColor: COLORS.WHITE,
         },
@@ -23,8 +24,11 @@ export default function InstructorTabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
-            // IconSymbol placeholder - will need proper icons
-            <Text style={{ color, fontSize: focused ? 24 : 20 }}>📊</Text>
+            <Ionicons 
+              name="stats-chart" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -33,7 +37,11 @@ export default function InstructorTabLayout() {
         options={{
           title: 'My Courses',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ color, fontSize: focused ? 24 : 20 }}>📚</Text>
+            <Ionicons 
+              name="library" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -42,7 +50,11 @@ export default function InstructorTabLayout() {
         options={{
           title: 'Create Course',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ color, fontSize: focused ? 24 : 20 }}>➕</Text>
+            <Ionicons 
+              name="add-circle" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -51,7 +63,11 @@ export default function InstructorTabLayout() {
         options={{
           title: 'Students',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ color, fontSize: focused ? 24 : 20 }}>👥</Text>
+            <Ionicons 
+              name="people" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -60,8 +76,32 @@ export default function InstructorTabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ color, fontSize: focused ? 24 : 20 }}>👤</Text>
+            <Ionicons 
+              name="person" 
+              size={focused ? 24 : 20} 
+              color={color} 
+            />
           ),
+        }}
+      />
+      
+      {/* Hidden screens - accessible via navigation but not shown in tabs */}
+      <Tabs.Screen
+        name="edit-course"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="course-details"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="gpt-usage"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>

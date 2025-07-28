@@ -1,14 +1,14 @@
-import React from 'react';
+import { COLORS } from '@/constants';
+import React, { useState } from 'react';
 import {
-  View,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
   TextInputProps,
-  ViewStyle,
   TextStyle,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { COLORS } from '@/constants';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -28,6 +28,8 @@ export default function Input({
   errorStyle,
   ...props
 }: InputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
@@ -37,10 +39,19 @@ export default function Input({
       <TextInput
         style={[
           styles.input,
+          isFocused && styles.inputFocused,
           error && styles.inputError,
           inputStyle,
         ]}
         placeholderTextColor={COLORS.GRAY_MEDIUM}
+        onFocus={(e) => {
+          setIsFocused(true);
+          props.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setIsFocused(false);
+          props.onBlur?.(e);
+        }}
         {...props}
       />
       
@@ -58,18 +69,31 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.GRAY_DARK,
+    color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
   },
   input: {
-    height: 50,
+    height: 54,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_MEDIUM,
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    borderColor: COLORS.BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 18,
     fontSize: 16,
-    color: COLORS.GRAY_DARK,
-    backgroundColor: COLORS.WHITE,
+    color: COLORS.TEXT_PRIMARY,
+    backgroundColor: COLORS.CARD_BACKGROUND,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inputFocused: {
+    borderColor: COLORS.PRIMARY,
+    borderWidth: 2,
+    shadowColor: COLORS.PRIMARY,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   inputError: {
     borderColor: COLORS.ERROR,
@@ -77,6 +101,6 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 14,
     color: COLORS.ERROR,
-    marginTop: 4,
+    marginTop: 6,
   },
 });

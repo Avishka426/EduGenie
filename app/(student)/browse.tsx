@@ -5,14 +5,14 @@ import { COLORS } from '@/constants';
 import ApiService from '@/services/api';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface Course {
@@ -38,6 +38,7 @@ export default function BrowseCoursesScreen() {
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<Set<string>>(new Set());
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,10 +48,39 @@ export default function BrowseCoursesScreen() {
 
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
+  // Debug: Log when enrolledCourses changes
+  useEffect(() => {
+    console.log('🎯 EnrolledCourses state changed:', Array.from(enrolledCourses));
+  }, [enrolledCourses]);
+
   const handleViewDetails = (courseId: string) => {
     // TODO: Navigate to course details screen
     console.log('View course details:', courseId);
     // router.push(`./course-details?id=${courseId}`);
+  };
+
+  const loadEnrolledCourses = async () => {
+    try {
+      console.log('🔄 Loading enrolled courses...');
+      const response = await ApiService.getEnrolledCourses();
+      console.log('📡 Enrolled courses response:', response);
+      
+      if (response.success && response.data) {
+        const enrolledData = Array.isArray(response.data) ? response.data : 
+                           (response.data.courses || []);
+        console.log('📝 Enrolled data:', enrolledData);
+        
+        const enrolledIds = new Set<string>(
+          enrolledData.map((course: any) => String(course.id || course._id || course.courseId)).filter(Boolean)
+        );
+        console.log('🎯 Enrolled IDs:', Array.from(enrolledIds));
+        setEnrolledCourses(enrolledIds);
+      } else {
+        console.log('❌ Failed to load enrolled courses:', response.error);
+      }
+    } catch (error) {
+      console.error('❌ Error loading enrolled courses:', error);
+    }
   };
 
   const loadCourses = async () => {
@@ -100,7 +130,12 @@ export default function BrowseCoursesScreen() {
   };
 
   const handleEnroll = async (course: Course) => {
-    if (course.isEnrolled) {
+    const isEnrolled = enrolledCourses.has(course.id);
+    console.log('🎯 HandleEnroll called for course:', course.id);
+    console.log('🎯 Current enrolled courses:', Array.from(enrolledCourses));
+    console.log('🎯 Is already enrolled?', isEnrolled);
+    
+    if (isEnrolled) {
       Alert.alert('Already Enrolled', 'You are already enrolled in this course');
       return;
     }
@@ -114,11 +149,26 @@ export default function BrowseCoursesScreen() {
           text: 'Enroll',
           onPress: async () => {
             try {
+              console.log('🔄 Enrolling in course:', course.id);
               const response = await ApiService.enrollInCourse(course.id);
+              console.log('📡 Enrollment response:', response);
+              
               if (response.success) {
+                // Add course to enrolled courses set
+                console.log('✅ Enrollment successful, updating state...');
+                setEnrolledCourses(prev => {
+                  const updated = new Set([...prev, course.id]);
+                  console.log('🎯 Updated enrolled courses:', Array.from(updated));
+                  return updated;
+                });
+                
                 Alert.alert('Success!', 'You have successfully enrolled in this course');
-                loadCourses(); // Refresh to update enrollment status
+                // Don't reload courses immediately, let state update first
+                setTimeout(() => {
+                  loadCourses();
+                }, 100);
               } else {
+                console.log('❌ Enrollment failed:', response.error);
                 Alert.alert('Error', response.error || 'Failed to enroll in course');
               }
             } catch (error) {
@@ -134,6 +184,7 @@ export default function BrowseCoursesScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     loadCourses();
+    loadEnrolledCourses();
   };
 
   const clearFilters = () => {
@@ -146,6 +197,7 @@ export default function BrowseCoursesScreen() {
   useEffect(() => {
     loadCategories();
     loadCourses();
+    loadEnrolledCourses();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -277,58 +329,73 @@ export default function BrowseCoursesScreen() {
             </Text>
           </Card>
         ) : (
-          courses.map((course) => (
-            <Card key={course.id} style={styles.courseCard}>
-              <View style={styles.courseHeader}>
-                <View style={styles.courseInfo}>
-                  <Text style={styles.courseTitle}>{course.title}</Text>
-                  <Text style={styles.instructorName}>by {course.instructorName}</Text>
-                  <Text style={styles.courseCategory}>{course.category} • {course.level}</Text>
+          courses.map((course) => {
+            const isEnrolled = enrolledCourses.has(course.id);
+            console.log(`🎯 Rendering course ${course.id}: enrolled=${isEnrolled}`);
+            
+            return (
+              <Card key={course.id} style={StyleSheet.flatten([
+                styles.courseCard,
+                isEnrolled && styles.enrolledCourseCard
+              ])}>
+                <View style={styles.courseHeader}>
+                  <View style={styles.courseInfo}>
+                    <Text style={styles.courseTitle}>{course.title}</Text>
+                    <Text style={styles.instructorName}>by {course.instructorName}</Text>
+                    <Text style={styles.courseCategory}>{course.category} • {course.level}</Text>
+                  </View>
+                  <View style={styles.coursePrice}>
+                    <Text style={styles.priceText}>${course.price}</Text>
+                  </View>
                 </View>
-                <View style={styles.coursePrice}>
-                  <Text style={styles.priceText}>${course.price}</Text>
-                </View>
-              </View>
 
-              <Text style={styles.courseDescription} numberOfLines={2}>
-                {course.description}
-              </Text>
-
-              <View style={styles.courseStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>👥</Text>
-                  <Text style={styles.statText}>{course.enrollmentCount} students</Text>
-                </View>
-                {course.duration && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statIcon}>⏱️</Text>
-                    <Text style={styles.statText}>{course.duration}h</Text>
+                {isEnrolled && (
+                  <View style={styles.enrolledBadge}>
+                    <Text style={styles.enrolledBadgeText}>✓ Enrolled</Text>
                   </View>
                 )}
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>📚</Text>
-                  <Text style={styles.statText}>{course.status}</Text>
-                </View>
-              </View>
 
-              <View style={styles.courseActions}>
-                <Button
-                  title="View Details"
-                  onPress={() => handleViewDetails(course.id)}
-                  variant="secondary"
-                  size="small"
-                  style={styles.actionButton}
-                />
-                <Button
-                  title={course.isEnrolled ? "Already Enrolled" : "Enroll Now"}
-                  onPress={() => handleEnroll(course)}
-                  disabled={course.isEnrolled}
-                  size="small"
-                  style={styles.enrollButton}
-                />
-              </View>
-            </Card>
-          ))
+                <Text style={styles.courseDescription} numberOfLines={2}>
+                  {course.description}
+                </Text>
+
+                <View style={styles.courseStats}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statIcon}>👥</Text>
+                    <Text style={styles.statText}>{course.enrollmentCount} students</Text>
+                  </View>
+                  {course.duration && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statIcon}>⏱️</Text>
+                      <Text style={styles.statText}>{course.duration}h</Text>
+                    </View>
+                  )}
+                  <View style={styles.statItem}>
+                    <Text style={styles.statIcon}>📚</Text>
+                    <Text style={styles.statText}>{course.status}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.courseActions}>
+                  <Button
+                    title="View Details"
+                    onPress={() => handleViewDetails(course.id)}
+                    variant="secondary"
+                    size="small"
+                    style={styles.actionButton}
+                  />
+                  <Button
+                    title={isEnrolled ? "Already Enrolled" : "Enroll Now"}
+                    onPress={() => handleEnroll(course)}
+                    disabled={isEnrolled}
+                    size="small"
+                    variant={isEnrolled ? "secondary" : "primary"}
+                    style={styles.enrollButton}
+                  />
+                </View>
+              </Card>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -468,6 +535,11 @@ const styles = StyleSheet.create({
   courseCard: {
     marginBottom: 16,
   },
+  enrolledCourseCard: {
+    borderWidth: 2,
+    borderColor: COLORS.SUCCESS,
+    backgroundColor: '#F0FDF4', // Light green background
+  },
   courseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -534,6 +606,23 @@ const styles = StyleSheet.create({
   },
   enrollButton: {
     flex: 1,
+  },
+  enrolledButton: {
+    backgroundColor: COLORS.GRAY_LIGHT,
+    borderColor: COLORS.GRAY_LIGHT,
+  },
+  enrolledBadge: {
+    backgroundColor: COLORS.SUCCESS,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  enrolledBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
   },
 });
 

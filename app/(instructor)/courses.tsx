@@ -5,14 +5,14 @@ import ApiService from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface Course {
@@ -192,12 +192,12 @@ export default function InstructorCoursesScreen() {
             style={styles.createButton}
           />
           <Button
-            title="🔄 Refresh"
+            title="Refresh"
             onPress={() => {
               loadCourses();
             }}
             variant="secondary"
-            size="medium"
+            size="small"
             style={styles.refreshButton}
           />
         </View>
@@ -288,7 +288,7 @@ export default function InstructorCoursesScreen() {
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'published':
-      return { color: COLORS.SUCCESS };
+      return { color: '#28a745' }; // Green color for published
     case 'draft':
       return { color: COLORS.WARNING };
     case 'archived':
@@ -383,6 +383,15 @@ const styles = StyleSheet.create({
   },
   courseCard: {
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 12,
+    borderRadius: 12,
   },
   courseHeader: {
     flexDirection: 'row',
