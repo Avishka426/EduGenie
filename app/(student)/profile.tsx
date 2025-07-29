@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import ApiService from '@/services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -51,21 +51,34 @@ export default function ProfileScreen() {
   useEffect(() => {
     loadLearningStats();
     loadProfileData();
-  }, []);
+  }, [loadProfileData]);
 
   // Debug log to track profilePicture state changes
   useEffect(() => {
     console.log('Profile picture state changed:', profilePicture);
   }, [profilePicture]);
 
-  const loadProfileData = async () => {
+  const loadProfileData = useCallback(async () => {
     try {
+      console.log('🔄 Student: Loading profile data...');
+      
+      // Check if user is authenticated first
+      const isAuth = await ApiService.isAuthenticated();
+      console.log('🔄 Student: Authentication status:', isAuth);
+      
+      if (!isAuth) {
+        console.log('❌ Student: Not authenticated, redirecting to login');
+        router.replace('/login');
+        return;
+      }
+
       const response = await ApiService.getProfile();
-      console.log('Profile data response:', response); // Debug log
+      console.log('🔄 Student: Profile data response:', response);
       
       if (response.success && response.data) {
         const profile = response.data.user || response.data; // Handle nested user object
-        console.log('Profile picture from API:', profile.profilePicture); // Debug log
+        console.log('🔄 Student: Profile picture from API:', profile.profilePicture);
+        console.log('🔄 Student: User role from API:', profile.role);
         
         setProfilePicture(profile.profilePicture || null);
         
@@ -86,11 +99,18 @@ export default function ProfileScreen() {
           bio: profile.bio || prev.bio,
           location: profile.location || prev.location,
         }));
+      } else {
+        console.error('❌ Student: Failed to load profile:', response.error);
+        if (response.error?.includes('token') || response.error?.includes('unauthorized')) {
+          Alert.alert('Session Expired', 'Please log in again.', [
+            { text: 'OK', onPress: () => router.replace('/login') }
+          ]);
+        }
       }
     } catch (error) {
-      console.error('Error loading profile data:', error);
+      console.error('❌ Student: Error loading profile data:', error);
     }
-  };
+  }, [router]);
 
   const loadLearningStats = async () => {
     try {
@@ -165,32 +185,63 @@ export default function ProfileScreen() {
     try {
       setIsUploadingPicture(true);
 
+      console.log('📤 Student: Starting profile picture upload...');
+      console.log('📤 Student: Image URI:', asset.uri);
+      console.log('📤 Student: Asset details:', { 
+        width: asset.width, 
+        height: asset.height, 
+        fileSize: asset.fileSize 
+      });
+
       const response = await ApiService.uploadProfilePicture(asset.uri);
-      console.log('Upload response:', response); // Debug log
+      console.log('📤 Student: Upload response:', response);
 
       if (response.success && response.data) {
         // Try different possible response formats
-        const newProfilePicture = response.data.profilePicture || response.data.imageUrl || response.data.url;
-        console.log('New profile picture URL:', newProfilePicture); // Debug log
+        const newProfilePicture = response.data.profilePicture || 
+                                 response.data.imageUrl || 
+                                 response.data.url ||
+                                 response.data.picture ||
+                                 response.data.filePath ||
+                                 response.data.path;
+        console.log('📤 Student: New profile picture URL:', newProfilePicture);
+        console.log('📤 Student: URL type:', typeof newProfilePicture);
+        console.log('📤 Student: Full response data keys:', Object.keys(response.data));
         
-        // Ensure the URL is valid
-        if (newProfilePicture && (newProfilePicture.startsWith('http') || newProfilePicture.startsWith('https'))) {
-          setProfilePicture(newProfilePicture);
+        // More flexible URL validation - accept relative paths too
+        if (newProfilePicture) {
+          let finalUrl = newProfilePicture;
+          
+          // If it's a relative path, make it absolute
+          if (!newProfilePicture.startsWith('http') && !newProfilePicture.startsWith('https')) {
+            // Check if it starts with / (absolute path) or is relative
+            const baseUrl = 'http://192.168.43.66:3000'; // Your API base URL
+            if (newProfilePicture.startsWith('/')) {
+              finalUrl = `${baseUrl}${newProfilePicture}`;
+            } else {
+              finalUrl = `${baseUrl}/${newProfilePicture}`;
+            }
+          }
+          
+          console.log('📤 Student: Final URL to use:', finalUrl);
+          setProfilePicture(finalUrl);
           
           // Refresh profile data to ensure we have the latest information
           await loadProfileData();
           
           Alert.alert('Success', 'Profile picture updated successfully!');
         } else {
-          console.error('Invalid image URL received:', newProfilePicture);
-          Alert.alert('Error', 'Invalid image URL received from server');
+          console.error('❌ Student: No image URL found in response');
+          console.error('❌ Student: Full response data:', response.data);
+          Alert.alert('Error', 'No image URL received from server');
         }
       } else {
-        console.error('Upload failed:', response.error); // Debug log
+        console.error('❌ Student: Upload failed:', response.error);
+        console.error('❌ Student: Full response:', response);
         Alert.alert('Error', response.error || 'Failed to upload profile picture');
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      console.error('❌ Student: Error uploading profile picture:', error);
       Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
     } finally {
       setIsUploadingPicture(false);

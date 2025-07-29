@@ -249,7 +249,7 @@ export default function AIRecommendationsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>🤖 AI Course Recommendations</Text>
+          <Text style={styles.title}>AI Course Recommendations</Text>
           <Text style={styles.subtitle}>
             Describe your career goals and let AI recommend the perfect courses for you
           </Text>
@@ -293,23 +293,9 @@ export default function AIRecommendationsScreen() {
               style={styles.recommendButton}
             />
             
-            {/* Debug button - remove this in production */}
-            <Button
-              title="Test API"
-              onPress={handleTestApiDirect}
-              variant="secondary"
-              size="small"
-              style={styles.testButton}
-            />
             
-            {/* UI Debug button - remove this in production */}
-            <Button
-              title="Test UI"
-              onPress={handleTestUIRender}
-              variant="secondary"
-              size="small"
-              style={styles.testButton}
-            />
+            
+            
             
             {recommendations && recommendations.length > 0 && (
               <Button

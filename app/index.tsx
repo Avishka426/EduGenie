@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -19,10 +19,10 @@ export default function WelcomeScreen() {
         {/* Features */}
         <View style={styles.features}>
           <Text style={styles.featureTitle}>Features:</Text>
-          <Text style={styles.feature}>📚 Browse & Enroll in Courses</Text>
-          <Text style={styles.feature}>🤖 AI-Powered Course Recommendations</Text>
-          <Text style={styles.feature}>👨‍🏫 Create & Manage Courses</Text>
-          <Text style={styles.feature}>📊 Track Your Learning Progress</Text>
+          <Text style={styles.feature}>Browse & Enroll in Courses</Text>
+          <Text style={styles.feature}>AI-Powered Course Recommendations</Text>
+          <Text style={styles.feature}>Create & Manage Courses</Text>
+          <Text style={styles.feature}>Track Your Learning Progress</Text>
         </View>
 
         {/* Buttons */}

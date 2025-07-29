@@ -318,24 +318,7 @@ export default function StudentsScreen() {
                 <Text style={styles.emptySubtext}>
                   Students will appear here once they enroll in this course
                 </Text>
-                <TouchableOpacity 
-                  style={styles.debugButton}
-                  onPress={() => {
-                    Alert.alert(
-                      'Debug Information', 
-                      `Course ID: ${selectedCourse.id}\nCourse Title: ${selectedCourse.title}\nAPI Endpoint: /api/courses/${selectedCourse.id}/students\nReported Enrollment Count: ${selectedCourse.enrollmentCount || 0}\n\nTroubleshooting:\n• Verify you are the instructor for this course\n• Check if students have actually enrolled\n• Ensure proper authentication\n• Contact support if issues persist`,
-                      [
-                        { text: 'OK' },
-                        { 
-                          text: 'Retry', 
-                          onPress: () => loadCourseStudents(selectedCourse)
-                        }
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={styles.debugButtonText}>🔍 Debug Info</Text>
-                </TouchableOpacity>
+                
               </View>
             )}
           </Card>
